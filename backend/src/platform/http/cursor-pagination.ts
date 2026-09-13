@@ -13,7 +13,8 @@ export type CursorPage<T> = {
 };
 
 /**
- * Build a cursor page from a fetch of `limit + 1` rows ordered by id ascending.
+ * Build a cursor page from a fetch of `limit + 1` rows ordered by id descending
+ * (newest first; next page uses `id: { lt: nextCursor }`).
  */
 export function buildCursorPage<T extends { id: string }>(
   rows: T[],

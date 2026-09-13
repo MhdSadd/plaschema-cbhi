@@ -28,6 +28,21 @@ export class ResetPasswordDto {
   newPassword!: string;
 }
 
+export class ChangePasswordDto {
+  @ApiProperty({ example: 'ChangeMe123!' })
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  @MaxLength(128)
+  currentPassword!: string;
+
+  @ApiProperty({ example: 'NewPassword123!' })
+  @IsString()
+  @MinLength(8)
+  @MaxLength(128)
+  newPassword!: string;
+}
+
 export class LoginDto {
   @ApiProperty({ example: 'admin@cbhi.local' })
   @IsEmail()
@@ -251,6 +266,12 @@ export class UserResponseDto {
   @ApiPropertyOptional({ nullable: true })
   lastSyncedAt!: Date | null;
 
+  @ApiProperty({
+    description:
+      'When true, field workers must change their password before using other APIs',
+  })
+  isPasswordChangeRequired!: boolean;
+
   @ApiProperty({ type: [UserWardResponseDto] })
   assignedWards!: UserWardResponseDto[];
 
@@ -282,6 +303,9 @@ export class FieldWorkerDetailOverviewDto {
     description: 'ISO datetime of the last reported device/app sync',
   })
   lastSyncedAt!: Date | null;
+
+  @ApiProperty()
+  isPasswordChangeRequired!: boolean;
 
   @ApiProperty()
   createdAt!: Date;

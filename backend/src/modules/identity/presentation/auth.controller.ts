@@ -18,10 +18,17 @@ import {
 } from '../../../platform/auth/current-user.decorator';
 import { Public } from '../../../platform/auth/public.decorator';
 import { Roles } from '../../../platform/auth/roles.decorator';
+import { SkipPasswordChangeRequired } from '../../../platform/auth/skip-password-change-required.decorator';
+import { ChangePasswordUseCase } from '../application/change-password.use-case';
 import { GetUserUseCase } from '../application/get-user.use-case';
 import { LoginUseCase } from '../application/login.use-case';
 import { ReportLastSyncUseCase } from '../application/report-last-sync.use-case';
-import { LoginDto, LoginResponseDto, UserResponseDto } from './identity.dto';
+import {
+  ChangePasswordDto,
+  LoginDto,
+  LoginResponseDto,
+  UserResponseDto,
+} from './identity.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -29,6 +36,7 @@ export class AuthController {
   constructor(
     private readonly loginUseCase: LoginUseCase,
     private readonly getUserUseCase: GetUserUseCase,
+    private readonly changePasswordUseCase: ChangePasswordUseCase,
     private readonly reportLastSync: ReportLastSyncUseCase,
   ) {}
 
@@ -42,11 +50,29 @@ export class AuthController {
   }
 
   @Get('me')
+  @SkipPasswordChangeRequired()
   @ApiBearerAuth('bearer')
   @ApiOperation({ summary: 'Get the authenticated user profile' })
   @ApiOkResponse({ type: UserResponseDto })
   me(@CurrentUser() user: AuthenticatedUser) {
     return this.getUserUseCase.execute(user.id);
+  }
+
+  @Post('change-password')
+  @Roles('field_worker')
+  @SkipPasswordChangeRequired()
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('bearer')
+  @ApiOperation({
+    summary:
+      'Change the authenticated field worker password and clear isPasswordChangeRequired',
+  })
+  @ApiOkResponse({ type: UserResponseDto })
+  changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: ChangePasswordDto,
+  ) {
+    return this.changePasswordUseCase.execute(user.id, body);
   }
 
   @Post('sync')

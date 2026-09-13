@@ -6,6 +6,7 @@ export type AuthenticatedUser = {
   role: 'admin' | 'field_worker';
   name: string;
   status: 'active' | 'inactive';
+  isPasswordChangeRequired: boolean;
 };
 
 export const CurrentUser = createParamDecorator(

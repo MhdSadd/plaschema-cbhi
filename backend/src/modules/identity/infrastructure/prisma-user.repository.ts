@@ -29,6 +29,7 @@ type UserWithWards = {
   status: 'active' | 'inactive';
   phone: string | null;
   lastSyncedAt: Date | null;
+  isPasswordChangeRequired: boolean;
   createdAt: Date;
   updatedAt: Date;
   assignedWards: Array<{
@@ -50,6 +51,7 @@ export class PrismaUserRepository implements UserRepository {
       status: user.status,
       phone: user.phone,
       lastSyncedAt: user.lastSyncedAt,
+      isPasswordChangeRequired: user.isPasswordChangeRequired,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
       assignedWards: user.assignedWards.map((assignment) => assignment.ward),
@@ -76,6 +78,7 @@ export class PrismaUserRepository implements UserRepository {
         role: input.role,
         status: input.status,
         phone: input.phone,
+        isPasswordChangeRequired: input.isPasswordChangeRequired,
         assignedWards: {
           create: input.assignedWardIds.map((wardId) => ({ wardId })),
         },
@@ -134,7 +137,7 @@ export class PrismaUserRepository implements UserRepository {
     };
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { gt: query.cursor } } : {}),
+      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -142,7 +145,7 @@ export class PrismaUserRepository implements UserRepository {
       this.prisma.user.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'asc' },
+        orderBy: { id: 'desc' },
         include: this.include,
       }),
     ]);
@@ -268,6 +271,7 @@ export class PrismaUserRepository implements UserRepository {
           status: input.status,
           passwordHash: input.passwordHash,
           lastSyncedAt: input.lastSyncedAt,
+          isPasswordChangeRequired: input.isPasswordChangeRequired,
         },
         include: this.include,
       });

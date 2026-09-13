@@ -10,7 +10,14 @@ export class FieldWorkerAccessError extends Error {
 export function mapFieldWorkerUser(user: AuthUserApi): FieldWorkerUser {
   if (user.role !== 'field_worker') throw new FieldWorkerAccessError()
   if (user.status !== 'active') throw new FieldWorkerAccessError('This enrollment officer account is inactive. Contact an administrator.')
-  return { ...user, role: 'field_worker', status: 'active', phone: user.phone ?? null, lastSyncedAt: user.lastSyncedAt ?? null }
+  return {
+    ...user,
+    role: 'field_worker',
+    status: 'active',
+    phone: user.phone ?? null,
+    lastSyncedAt: user.lastSyncedAt ?? null,
+    isPasswordChangeRequired: user.isPasswordChangeRequired ?? false,
+  }
 }
 
 export function getTokenExpiresAt(token: string): number | null {
@@ -29,5 +36,17 @@ export function getTokenExpiresAt(token: string): number | null {
 export function isFieldWorkerUser(value: unknown): value is FieldWorkerUser {
   if (typeof value !== 'object' || value === null) return false
   const user = value as Partial<FieldWorkerUser>
-  return typeof user.id === 'string' && typeof user.name === 'string' && typeof user.email === 'string' && user.role === 'field_worker' && user.status === 'active' && Array.isArray(user.assignedWards)
+  return (
+    typeof user.id === 'string' &&
+    typeof user.name === 'string' &&
+    typeof user.email === 'string' &&
+    user.role === 'field_worker' &&
+    user.status === 'active' &&
+    Array.isArray(user.assignedWards) &&
+    (user.isPasswordChangeRequired === undefined || typeof user.isPasswordChangeRequired === 'boolean')
+  )
+}
+
+export function normalizeFieldWorkerUser(user: FieldWorkerUser): FieldWorkerUser {
+  return { ...user, isPasswordChangeRequired: user.isPasswordChangeRequired ?? false }
 }

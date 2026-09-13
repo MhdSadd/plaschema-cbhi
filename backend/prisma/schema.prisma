@@ -183,6 +183,8 @@ model User {
   phone        String?
   /// Last successful offline/mobile sync reported by the client app.
   lastSyncedAt DateTime?
+  /// When true, field workers must set a new password before using other APIs.
+  isPasswordChangeRequired Boolean @default(false)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 

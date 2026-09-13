@@ -1,1 +1,1 @@
-export { fetchCurrentFieldWorker, loginFieldWorker } from './auth.service'
+export { changeFieldWorkerPassword, fetchCurrentFieldWorker, loginFieldWorker } from './auth.service'

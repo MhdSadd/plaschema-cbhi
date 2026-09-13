@@ -110,7 +110,7 @@ export class PrismaWardRepository implements WardRepository {
     };
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { gt: query.cursor } } : {}),
+      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -118,7 +118,7 @@ export class PrismaWardRepository implements WardRepository {
       this.prisma.ward.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'asc' },
+        orderBy: { id: 'desc' },
         include: {
           _count: {
             select: {

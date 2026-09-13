@@ -20,6 +20,7 @@ describe('AssignWardFieldWorkersUseCase', () => {
     role: 'admin' as const,
     name: 'Admin',
     status: 'active' as const,
+    isPasswordChangeRequired: false,
   };
 
   let wards: jest.Mocked<WardRepository>;

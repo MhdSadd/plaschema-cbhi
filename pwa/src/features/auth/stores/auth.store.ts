@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 import type { AuthStatus, FieldWorkerLoginResult, FieldWorkerUser, SessionNotice, SessionValidation } from '../types'
-import { isFieldWorkerUser } from '../utils'
+import { isFieldWorkerUser, normalizeFieldWorkerUser } from '../utils'
 
 export const PWA_SESSION_STORAGE_KEY = 'plaschema-field-worker-session'
 
@@ -19,6 +19,7 @@ interface AuthState {
   validation: SessionValidation
   notice: SessionNotice
   setSession: (result: FieldWorkerLoginResult) => void
+  updateUser: (user: FieldWorkerUser) => void
   completeRestore: (user: FieldWorkerUser, validation?: Exclude<SessionValidation, null>) => void
   continueOffline: () => void
   hydrateFromStorage: () => void
@@ -37,7 +38,10 @@ function parseSession(value: string | null): StoredSession | null {
       parsed.expiresAt > Date.now() &&
       isFieldWorkerUser(parsed.user)
     ) {
-      return parsed as StoredSession
+      return {
+        ...parsed,
+        user: normalizeFieldWorkerUser(parsed.user as FieldWorkerUser),
+      } as StoredSession
     }
   } catch {
     return null
@@ -66,17 +70,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   validation: null,
   notice: initial.expired ? 'expired' : null,
   setSession: (result) => {
-    writeSession(result)
-    set({ ...result, status: 'authenticated', validation: 'verified', notice: null })
+    const session = { ...result, user: normalizeFieldWorkerUser(result.user) }
+    writeSession(session)
+    set({ ...session, status: 'authenticated', validation: 'verified', notice: null })
+  },
+  updateUser: (user) => {
+    const normalized = normalizeFieldWorkerUser(user)
+    const { accessToken, expiresAt } = get()
+    if (!accessToken || !expiresAt) return
+    writeSession({ accessToken, expiresAt, user: normalized })
+    set({ user: normalized })
   },
   completeRestore: (user, validation = 'verified') => {
     const { accessToken, expiresAt } = get()
     if (!accessToken || !expiresAt || expiresAt <= Date.now()) return
-    writeSession({ accessToken, expiresAt, user })
-    set({ user, status: 'authenticated', validation, notice: null })
+    const normalized = normalizeFieldWorkerUser(user)
+    writeSession({ accessToken, expiresAt, user: normalized })
+    set({ user: normalized, status: 'authenticated', validation, notice: null })
   },
   continueOffline: () => {
     const { accessToken, expiresAt, user } = get()
+    if (user?.isPasswordChangeRequired) return
     if (!accessToken || !expiresAt || expiresAt <= Date.now() || !user) {
       get().clearSession('expired')
       return

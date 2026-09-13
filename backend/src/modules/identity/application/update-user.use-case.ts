@@ -72,6 +72,10 @@ export class UpdateUserUseCase {
         input.phone === undefined ? undefined : input.phone?.trim() || null,
       status: input.status,
       passwordHash: input.password ? await hash(input.password, 12) : undefined,
+      isPasswordChangeRequired:
+        input.password && existing.role === 'field_worker'
+          ? true
+          : undefined,
       assignedWardIds:
         existing.role === 'field_worker'
           ? assignedWardIds

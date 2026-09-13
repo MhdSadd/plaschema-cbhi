@@ -147,7 +147,7 @@ export class PrismaHealthFacilityRepository
     };
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { gt: query.cursor } } : {}),
+      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -155,7 +155,7 @@ export class PrismaHealthFacilityRepository
       this.prisma.healthFacility.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'asc' },
+        orderBy: { id: 'desc' },
         include: {
           ...this.include,
           _count: { select: { enrollments: true } },

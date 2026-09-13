@@ -19,6 +19,7 @@ export type User = {
   status: UserStatus;
   phone: string | null;
   lastSyncedAt: Date | null;
+  isPasswordChangeRequired: boolean;
   assignedWards: UserWard[];
   createdAt: Date;
   updatedAt: Date;
@@ -61,6 +62,7 @@ export type FieldWorkerDetailOverview = {
   phone: string | null;
   status: UserStatus;
   lastSyncedAt: Date | null;
+  isPasswordChangeRequired: boolean;
   createdAt: Date;
   updatedAt: Date;
 };

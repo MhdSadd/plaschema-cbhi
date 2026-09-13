@@ -9,6 +9,7 @@ describe('GenerateCapitationUseCase', () => {
     name: 'Root Admin',
     role: 'admin' as const,
     status: 'active' as const,
+    isPasswordChangeRequired: false,
   };
 
   let capitation: jest.Mocked<CapitationRepository>;

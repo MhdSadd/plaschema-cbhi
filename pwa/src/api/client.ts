@@ -1,5 +1,6 @@
 import axios from 'axios'
 
+import { getApiErrorCode } from './errors'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 
 export const api = axios.create({
@@ -16,10 +17,16 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error: unknown) => {
-    if (axios.isAxiosError(error) && error.response?.status === 401) {
+    if (axios.isAxiosError(error)) {
       const requestUrl = error.config?.url ?? ''
-      if (!requestUrl.includes('/auth/login')) {
+      if (error.response?.status === 401 && !requestUrl.includes('/auth/login')) {
         useAuthStore.getState().clearSession('expired')
+      }
+      if (getApiErrorCode(error) === 'PASSWORD_CHANGE_REQUIRED') {
+        const user = useAuthStore.getState().user
+        if (user && !user.isPasswordChangeRequired) {
+          useAuthStore.getState().updateUser({ ...user, isPasswordChangeRequired: true })
+        }
       }
     }
     return Promise.reject(error)

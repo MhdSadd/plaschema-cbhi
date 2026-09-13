@@ -29,6 +29,14 @@ describe('auth session utilities', () => {
   })
 
   it('normalizes optional profile fields', () => {
-    expect(mapFieldWorkerUser(baseUser)).toMatchObject({ phone: null, lastSyncedAt: null })
+    expect(mapFieldWorkerUser(baseUser)).toMatchObject({
+      phone: null,
+      lastSyncedAt: null,
+      isPasswordChangeRequired: false,
+    })
+  })
+
+  it('preserves isPasswordChangeRequired from the login payload', () => {
+    expect(mapFieldWorkerUser({ ...baseUser, isPasswordChangeRequired: true }).isPasswordChangeRequired).toBe(true)
   })
 })

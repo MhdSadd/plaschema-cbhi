@@ -11,6 +11,7 @@ const user: FieldWorkerUser = {
   status: 'active',
   phone: null,
   lastSyncedAt: null,
+  isPasswordChangeRequired: false,
   assignedWards: [],
   createdAt: '2026-09-01T10:00:00.000Z',
   updatedAt: '2026-09-01T10:00:00.000Z',
@@ -40,5 +41,25 @@ describe('PWA auth store', () => {
     useAuthStore.getState().continueOffline()
     expect(useAuthStore.getState().status).toBe('unauthenticated')
     expect(useAuthStore.getState().notice).toBe('expired')
+  })
+
+  it('does not continue offline when a password change is required', () => {
+    useAuthStore.setState({
+      accessToken: 'token',
+      expiresAt: Date.now() + 60_000,
+      user: { ...user, isPasswordChangeRequired: true },
+      status: 'restoring',
+    })
+    useAuthStore.getState().continueOffline()
+    expect(useAuthStore.getState().status).toBe('restoring')
+    expect(useAuthStore.getState().validation).toBeNull()
+  })
+
+  it('updates the stored user after a password change', () => {
+    useAuthStore.getState().setSession({ accessToken: 'token', expiresAt: Date.now() + 60_000, user })
+    useAuthStore.getState().updateUser({ ...user, isPasswordChangeRequired: false })
+    expect(JSON.parse(localStorage.getItem(PWA_SESSION_STORAGE_KEY) ?? '{}')).toMatchObject({
+      user: { isPasswordChangeRequired: false },
+    })
   })
 })

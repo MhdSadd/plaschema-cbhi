@@ -14,6 +14,7 @@ describe('GetFileJobDownloadUrlUseCase', () => {
     email: 'a@b.c',
     name: 'Admin',
     status: 'active' as const,
+    isPasswordChangeRequired: false,
   };
 
   beforeEach(() => {
