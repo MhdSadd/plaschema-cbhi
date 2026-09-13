@@ -5,6 +5,7 @@ import { useFieldWorkerLogout } from '@/features/auth/hooks'
 import { useAuthStore } from '@/features/auth/stores/auth.store'
 import { useEnrollmentReferences, useEnrollmentSync, useLocalEnrollments, useReferenceSync } from '@/features/enrollment/hooks'
 
+import { ProfileChangePasswordCard } from './profile-change-password-card'
 import { WardAccessCard } from './ward-access-card'
 
 function formatDateTime(value: string | null) {
@@ -31,12 +32,14 @@ export function ProfileView() {
 
     <WardAccessCard wards={user.assignedWards} />
 
+    <ProfileChangePasswordCard />
+
     {message && <div aria-live="polite" role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm font-semibold text-amber-800">{message}</div>}
     <div className="space-y-3">
       <button className="primary-button flex w-full items-center justify-center gap-2" disabled={!navigator.onLine || sync.isPending} onClick={() => sync.mutate()}><RefreshCw aria-hidden="true" className={sync.isPending ? 'animate-spin' : ''} size={17} />{sync.isPending ? 'Synchronizing…' : 'Synchronize now'}</button>
       <button className="secondary-button flex w-full items-center justify-center gap-2" disabled={!navigator.onLine || referenceSync.isPending} onClick={() => referenceSync.mutate()}><RefreshCw aria-hidden="true" className={referenceSync.isPending ? 'animate-spin' : ''} size={17} />Refresh wards and facilities</button>
       <button className="secondary-button flex w-full items-center justify-center gap-2" onClick={() => setMessage('To install: open your browser menu and choose “Add to Home Screen”.')}><Download aria-hidden="true" size={17} />Install app help</button>
-      <button className="secondary-button flex w-full items-center justify-center gap-2" onClick={() => setMessage('Contact your programme administrator for support or password assistance.')}><HelpCircle aria-hidden="true" size={17} />Help and support</button>
+      <button className="secondary-button flex w-full items-center justify-center gap-2" onClick={() => setMessage('Contact your programme administrator for support. Use Change password above to update your sign-in password.')}><HelpCircle aria-hidden="true" size={17} />Help and support</button>
       <button className="secondary-button flex w-full items-center justify-center gap-2 !border-red-200 !text-red-700" onClick={logout}><LogOut aria-hidden="true" size={17} />Sign out</button>
     </div>
     <p className="flex items-center justify-center gap-1.5 text-center text-xs text-neutral-400"><ShieldCheck aria-hidden="true" size={14} />Signed in as a PLASCHEMA enrollment officer</p>

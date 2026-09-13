@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
+import { ChangePasswordUseCase } from './application/change-password.use-case';
 import { CreateUserUseCase } from './application/create-user.use-case';
 import { GetFieldWorkerDetailUseCase } from './application/get-field-worker-detail.use-case';
 import { GetUserUseCase } from './application/get-user.use-case';
@@ -19,6 +20,7 @@ import { UsersController } from './presentation/users.controller';
   providers: [
     { provide: USER_REPOSITORY, useClass: PrismaUserRepository },
     LoginUseCase,
+    ChangePasswordUseCase,
     CreateUserUseCase,
     ListUsersUseCase,
     GetUserUseCase,

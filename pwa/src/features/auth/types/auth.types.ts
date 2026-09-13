@@ -12,6 +12,7 @@ export interface AuthUserApi {
   status: 'active' | 'inactive'
   phone?: string | null
   lastSyncedAt?: string | null
+  isPasswordChangeRequired?: boolean
   assignedWards: AssignedWardApi[]
   createdAt: string
   updatedAt: string
@@ -22,6 +23,12 @@ export interface FieldWorkerUser extends Omit<AuthUserApi, 'role' | 'status' | '
   status: 'active'
   phone: string | null
   lastSyncedAt: string | null
+  isPasswordChangeRequired: boolean
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string
+  newPassword: string
 }
 
 export interface LoginPayload {

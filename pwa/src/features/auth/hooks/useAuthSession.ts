@@ -11,6 +11,7 @@ import { FieldWorkerAccessError } from '../utils'
 export function useAuthSession() {
   const isOnline = useNetworkStatus()
   const accessToken = useAuthStore((state) => state.accessToken)
+  const user = useAuthStore((state) => state.user)
   const status = useAuthStore((state) => state.status)
   const validation = useAuthStore((state) => state.validation)
   const completeRestore = useAuthStore((state) => state.completeRestore)
@@ -27,8 +28,10 @@ export function useAuthSession() {
   })
 
   useEffect(() => {
-    if (status === 'restoring' && !isOnline) continueOffline()
-  }, [continueOffline, isOnline, status])
+    if (status === 'restoring' && !isOnline && !user?.isPasswordChangeRequired) {
+      continueOffline()
+    }
+  }, [continueOffline, isOnline, status, user?.isPasswordChangeRequired])
 
   useEffect(() => {
     if (query.data && accessToken) completeRestore(query.data, 'verified')

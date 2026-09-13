@@ -1,6 +1,13 @@
 import { _get, _post, type ApiResponse } from '@/api'
 
-import type { AuthUserApi, FieldWorkerLoginResult, LoginPayload, LoginResponseApi } from '../types'
+import type {
+  AuthUserApi,
+  ChangePasswordPayload,
+  FieldWorkerLoginResult,
+  FieldWorkerUser,
+  LoginPayload,
+  LoginResponseApi,
+} from '../types'
 import { getTokenExpiresAt, mapFieldWorkerUser } from '../utils'
 
 export async function loginFieldWorker(payload: LoginPayload): Promise<FieldWorkerLoginResult> {
@@ -13,5 +20,13 @@ export async function loginFieldWorker(payload: LoginPayload): Promise<FieldWork
 
 export async function fetchCurrentFieldWorker(signal?: AbortSignal) {
   const response = await _get<ApiResponse<AuthUserApi>>('/auth/me', undefined, { signal })
+  return mapFieldWorkerUser(response.data.data)
+}
+
+export async function changeFieldWorkerPassword(payload: ChangePasswordPayload): Promise<FieldWorkerUser> {
+  const response = await _post<ApiResponse<AuthUserApi>, ChangePasswordPayload>(
+    '/auth/change-password',
+    payload,
+  )
   return mapFieldWorkerUser(response.data.data)
 }

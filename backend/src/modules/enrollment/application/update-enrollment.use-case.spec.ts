@@ -14,6 +14,7 @@ describe('UpdateEnrollmentUseCase', () => {
     email: 'admin@cbhi.local',
     name: 'Admin User',
     status: 'active' as const,
+    isPasswordChangeRequired: false,
   };
 
   const enrollmentId = '01900000-0000-7000-8000-000000000001';

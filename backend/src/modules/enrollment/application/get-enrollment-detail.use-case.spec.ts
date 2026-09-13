@@ -11,6 +11,7 @@ describe('GetEnrollmentDetailUseCase', () => {
     email: 'admin@cbhi.local',
     name: 'Admin User',
     status: 'active' as const,
+    isPasswordChangeRequired: false,
   };
 
   const enrollment = {

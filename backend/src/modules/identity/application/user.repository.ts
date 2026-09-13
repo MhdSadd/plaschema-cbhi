@@ -23,6 +23,7 @@ export type CreateUserInput = {
   status: UserStatus;
   phone: string | null;
   assignedWardIds: string[];
+  isPasswordChangeRequired: boolean;
 };
 
 export type UpdateUserInput = {
@@ -32,6 +33,7 @@ export type UpdateUserInput = {
   passwordHash?: string;
   assignedWardIds?: string[];
   lastSyncedAt?: Date | null;
+  isPasswordChangeRequired?: boolean;
 };
 
 export type ListUsersQuery = CursorListQuery & {

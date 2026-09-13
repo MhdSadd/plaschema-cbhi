@@ -1,1 +1,7 @@
-export { FieldWorkerAccessError, getTokenExpiresAt, isFieldWorkerUser, mapFieldWorkerUser } from './session'
+export {
+  FieldWorkerAccessError,
+  getTokenExpiresAt,
+  isFieldWorkerUser,
+  mapFieldWorkerUser,
+  normalizeFieldWorkerUser,
+} from './session'

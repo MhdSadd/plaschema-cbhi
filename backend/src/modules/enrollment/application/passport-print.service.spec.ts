@@ -28,6 +28,7 @@ describe('PassportPrintService', () => {
       findManyByIds: jest.fn(),
       findManyStatusByIds: jest.fn(),
       updateStatus: jest.fn(),
+      update: jest.fn(),
       markPrinted: jest.fn(),
       setPassportPrintObjectKey: jest.fn().mockResolvedValue(undefined),
       list: jest.fn(),

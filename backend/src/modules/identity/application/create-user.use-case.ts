@@ -77,6 +77,7 @@ export class CreateUserUseCase {
           ? input.phone?.trim() || null
           : input.phone!.trim(),
       assignedWardIds,
+      isPasswordChangeRequired: input.role === 'field_worker',
     });
   }
 }

@@ -1,6 +1,6 @@
 # PLASCHEMA Project Handoff
 
-Last updated: 10 September 2026
+Last updated: 13 September 2026
 Last verified code commit: `177f909`
 
 ## Purpose
@@ -56,7 +56,7 @@ This is a pnpm workspace. The root scripts manage all three apps.
 - Unsupported mock-only facility fields (code, ownership, community, address, contacts and onboarding date) are not displayed or submitted. The Beneficiaries tab reads `GET /enrollments?healthFacilityId=` with cursor pagination and remains display-only until beneficiary detail is API-backed.
 - Facility list KPI cards use filter-scoped `meta.total` and `summary` (`active`, `totalBeneficiaries`) rather than calculating the current page.
 - Field-worker list data uses `GET /users?role=field_worker` with debounced search, status filters and cursor-based Previous/Next navigation.
-- Field-worker creation uses `POST /users` with the role fixed to `field_worker`, optional multi-ward assignment and active/inactive status.
+- Field-worker creation uses `POST /users` with the role fixed to `field_worker`, optional multi-ward assignment and active/inactive status. New field workers are created with `isPasswordChangeRequired: true`.
 - Empty field-worker ward assignment intentionally means access to all wards and is labelled explicitly throughout the UI.
 - Initial and reset passwords can be cryptographically generated in the browser or entered manually. Successful credentials are displayed once for the admin to copy and are not persisted in stores, query caches, URLs or browser storage.
 - Field-worker detail uses `GET /users/:id/detail`; edits and status changes use `PATCH /users/:id`, and admin password reset uses `POST /users/:id/reset-password`.
@@ -88,7 +88,7 @@ This is a pnpm workspace. The root scripts manage all three apps.
 - React, TypeScript, Vite, Tailwind, React Router, Zustand, Axios and TanStack React Query.
 - Routes: login, home, household enrollment, households list, late household-member addition, beneficiaries, beneficiary detail, sync and profile.
 - Six-step enrollment includes passport and ID-document design inputs.
-- Login uses `POST /auth/login`, accepts only active field-worker accounts and stores no password.
+- Login uses `POST /auth/login`, accepts only active field-worker accounts and stores no password. The login `user` payload includes `isPasswordChangeRequired`; when true the PWA shows a blocking change-password dialog via `POST /auth/change-password` before rendering the protected app shell. Offline restore is blocked while the flag is true; sync/reference refresh also stays paused until the password is changed. Other field-worker APIs return `403 PASSWORD_CHANGE_REQUIRED` until the flag is cleared. After sign-in, field workers can also change their password voluntarily from Profile → **Change password** (same endpoint).
 - Saved sessions persist locally, are checked with `GET /auth/me` when online and may continue offline only until the JWT expires.
 - A protected-request 401, role mismatch or local token expiry clears the session. A transient `/auth/me` failure preserves it and offers Retry or Continue Offline.
 - Worker profile identity and assigned wards come from the authenticated user response; empty ward assignment means access to all wards.
@@ -116,6 +116,7 @@ This is a pnpm workspace. The root scripts manage all three apps.
 
 ### Backend contracts for PWA sync (ready)
 
+- `POST /api/auth/change-password` lets an authenticated field worker submit `currentPassword` and `newPassword`, clears `isPasswordChangeRequired`, and returns the updated user. Allowed while the flag is true; all other field-worker routes remain blocked until it succeeds.
 - `POST /api/auth/sync` sets the authenticated user’s `lastSyncedAt` to now (call after the client’s one-by-one pending loop).
 - `GET /api/users/:id/detail` allows `field_worker` for **own** id only; overview includes `lastSyncedAt`, plus `stats` (`totalEnrolled`, `enrollmentsToday`, `enrollmentsThisMonth`, …), `wards`, and `activityLog`. Pending counts stay device-local.
 - No refresh-token endpoint; clients re-login when the JWT expires.
@@ -184,6 +185,7 @@ Both frontend development servers use Vite's `--strictPort` option and exit inst
 
 ## Decisions already made
 
+- Cursor-paginated list endpoints (`GET /wards`, `/users`, `/health-facilities`, `/enrollments`, `/households`) return newest records first (UUID v7 id descending; next page uses `cursor` with `id` less than the previous page’s last row).
 - Keep admin and PWA as separate apps in the same Git repository.
 - Use `frontend/` for admin and `pwa/` for the mobile field-worker app.
 - Use Zustand for shared client state.
@@ -204,7 +206,7 @@ Both frontend development servers use Vite's `--strictPort` option and exit inst
 - Keep `GET /health-facilities/stream` for a separate PWA offline-sync phase, and use the admin detail endpoint rather than the simpler by-ID endpoint without a consumer.
 - Keep the field-worker role implicit on the Field Workers screens; the UI always submits `field_worker` and does not expose a role selector.
 - Field workers with no assigned wards have deliberate all-ward access; clearing every assignment preserves that backend behavior.
-- Generate field-worker passwords client-side with Web Crypto by default, allow manual passwords, reveal successful credentials once, and keep password recovery admin-controlled without an invitation/setup flow.
+- Generate field-worker passwords client-side with Web Crypto by default, allow manual passwords, reveal successful credentials once, and keep password recovery admin-controlled without an invitation/setup flow. Admin password reset (`POST /users/:id/reset-password`) re-sets `isPasswordChangeRequired` for field workers.
 - Persist the PWA field-worker session in local storage without a Remember me control. Revalidate through `/auth/me` when online and permit offline access only before the JWT expires.
 - Keep PWA authentication separate from local enrollment state, reject admin accounts in the PWA, and never cache authenticated API responses in the service worker.
 - PWA enrollment sync is one-by-one via `POST /household-enrollments` (idempotent); after the loop call `POST /auth/sync` to persist `lastSyncedAt`.

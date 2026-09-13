@@ -13,6 +13,7 @@ describe('GetFieldWorkerDetailUseCase', () => {
     status: 'active' as const,
     phone: '+2348034567890',
     lastSyncedAt: new Date('2026-08-29T20:00:00.000Z'),
+    isPasswordChangeRequired: false,
     assignedWards: [{ id: 'ward-1', name: 'Vom Central', lga: 'Jos South' }],
     createdAt: new Date('2024-06-01T00:00:00.000Z'),
     updatedAt: new Date('2024-06-01T00:00:00.000Z'),
@@ -24,6 +25,7 @@ describe('GetFieldWorkerDetailUseCase', () => {
     role: 'admin' as const,
     name: 'Admin',
     status: 'active' as const,
+    isPasswordChangeRequired: false,
   };
 
   const fieldWorkerActor = {
@@ -32,6 +34,7 @@ describe('GetFieldWorkerDetailUseCase', () => {
     role: 'field_worker' as const,
     name: fieldWorker.name,
     status: 'active' as const,
+    isPasswordChangeRequired: false,
   };
 
   let users: jest.Mocked<UserRepository>;
@@ -108,6 +111,7 @@ describe('GetFieldWorkerDetailUseCase', () => {
       phone: fieldWorker.phone,
       status: fieldWorker.status,
       lastSyncedAt: fieldWorker.lastSyncedAt,
+      isPasswordChangeRequired: fieldWorker.isPasswordChangeRequired,
       createdAt: fieldWorker.createdAt,
       updatedAt: fieldWorker.updatedAt,
     });

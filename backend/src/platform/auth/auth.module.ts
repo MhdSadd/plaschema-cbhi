@@ -6,6 +6,7 @@ import { AppConfigModule } from '../config/app-config.module';
 import { AppConfigService } from '../config/app-config.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { JwtStrategy } from './jwt.strategy';
+import { PasswordChangeRequiredGuard } from './password-change-required.guard';
 import { RolesGuard } from './roles.guard';
 
 @Global()
@@ -33,6 +34,10 @@ import { RolesGuard } from './roles.guard';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: PasswordChangeRequiredGuard,
     },
   ],
   exports: [JwtModule, PassportModule],

@@ -359,7 +359,7 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
     };
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { gt: query.cursor } } : {}),
+      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -367,7 +367,7 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
       this.prisma.household.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'asc' },
+        orderBy: { id: 'desc' },
         include: {
           ward: { select: { id: true, name: true, lga: true, code: true } },
           headEnrollment: {

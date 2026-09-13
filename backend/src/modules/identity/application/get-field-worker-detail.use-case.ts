@@ -63,6 +63,7 @@ export class GetFieldWorkerDetailUseCase {
         phone: user.phone,
         status: user.status,
         lastSyncedAt: user.lastSyncedAt,
+        isPasswordChangeRequired: user.isPasswordChangeRequired,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },

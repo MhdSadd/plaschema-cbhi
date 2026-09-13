@@ -15,7 +15,7 @@ export function OfflineEnrollmentCoordinator() {
   const status = useAuthStore((state) => state.status)
 
   useEffect(() => {
-    if (status !== 'authenticated' || !user || !navigator.onLine) return
+    if (status !== 'authenticated' || !user || user.isPasswordChangeRequired || !navigator.onLine) return
     const wardIds = user.assignedWards.map((ward) => ward.id)
     const run = async (refreshReferences: boolean) => {
       if (refreshReferences) {

@@ -333,7 +333,7 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
     const filterWhere = buildEnrollmentListWhere(query);
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { gt: query.cursor } } : {}),
+      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -341,7 +341,7 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
       this.prisma.enrollment.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'asc' },
+        orderBy: { id: 'desc' },
         include: this.include,
       }),
     ]);

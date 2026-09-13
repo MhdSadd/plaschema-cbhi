@@ -10,6 +10,7 @@ describe('GetHouseholdCodeCountersUseCase', () => {
     email: 'worker@cbhi.local',
     name: 'Field Worker',
     status: 'active' as const,
+    isPasswordChangeRequired: false,
   };
 
   let households: jest.Mocked<

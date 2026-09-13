@@ -17,6 +17,7 @@ export class ResetPasswordUseCase {
 
     await this.users.update(userId, {
       passwordHash: await hash(newPassword, 12),
+      isPasswordChangeRequired: existing.role === 'field_worker',
     });
 
     return { id: userId, passwordReset: true };
