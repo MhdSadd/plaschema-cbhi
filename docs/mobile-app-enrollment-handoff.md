@@ -81,7 +81,7 @@ Passport: JPEG/PNG/WebP. ID document: image or PDF. Max 5 MB each.
 
 **Not collected:** next-of-kin name/relationship (removed from API). Do not send them.
 
-**Categories (fixed):** `IDPs`, `Elderly 65+`, `Indigents / Very Poor / Others`.
+**Categories (fixed):** `Elderly 65 and above`, `Indigent (very poor) / others`, `Internal displaced persons`, `Orphan`, `People Living with Disability`, `Pregnant Woman`, `Under 5 YEAR`.
 
 ---
 
@@ -332,7 +332,7 @@ Used by `POST /household-enrollments` (via `CreateEnrollmentDto` fields on the r
 | --- | --- | --- |
 | `idempotencyId` | Yes | UUID v7, generated once per person |
 | `capturedAt` | No | ISO datetime from device |
-| `category` | Yes | One of the three fixed categories |
+| `category` | Yes | One of the seven fixed programme categories |
 | `passportObjectKey` | Yes | From presign upload |
 | `idDocumentObjectKey` | Yes | From presign upload |
 | `title` | Yes | `mr`, `mrs`, `miss`, `ms`, `dr`, `chief`, `rev`, `alhaji`, `hajia`, `other` |

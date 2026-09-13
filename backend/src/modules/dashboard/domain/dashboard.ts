@@ -1,13 +1,14 @@
+import {
+  BENEFICIARY_CATEGORIES,
+  isKnownBeneficiaryCategory,
+  normalizeBeneficiaryCategory,
+} from '../../../shared/beneficiary-categories';
 import type {
   DashboardPeriod,
   DashboardTrendGranularity,
 } from './dashboard-period';
 
-export const DASHBOARD_KNOWN_CATEGORIES = [
-  'IDPs',
-  'Elderly 65+',
-  'Indigents / Very Poor / Others',
-] as const;
+export const DASHBOARD_KNOWN_CATEGORIES = BENEFICIARY_CATEGORIES;
 
 export type DashboardKnownCategory =
   (typeof DASHBOARD_KNOWN_CATEGORIES)[number];
@@ -15,15 +16,14 @@ export type DashboardKnownCategory =
 export const DASHBOARD_OTHER_CATEGORY = 'Other';
 
 export function bucketEnrollmentCategory(category: string): string {
-  if (
-    (DASHBOARD_KNOWN_CATEGORIES as readonly string[]).includes(category)
-  ) {
-    return category;
+  const normalized = normalizeBeneficiaryCategory(category);
+  if (isKnownBeneficiaryCategory(normalized)) {
+    return normalized;
   }
   return DASHBOARD_OTHER_CATEGORY;
 }
 
-/** Always return the three known categories; append Other only when it has count. */
+/** Always return the known programme categories; append Other only when it has count. */
 export function normalizeCategoryBreakdown(
   rows: Array<{ category: string; count: number }>,
 ): Array<{ category: string; count: number }> {

@@ -1,6 +1,14 @@
 import type { EnrollmentFormValues, FieldWorkerDetailStats, LocalEnrollmentRecord, ReferenceFacility, ReferenceWard } from '../types'
 
-export const BENEFICIARY_CATEGORIES = ['IDPs', 'Elderly 65+', 'Indigents / Very Poor / Others'] as const
+export const BENEFICIARY_CATEGORIES = [
+  'Elderly 65 and above',
+  'Indigent (very poor) / others',
+  'Internal displaced persons',
+  'Orphan',
+  'People Living with Disability',
+  'Pregnant Woman',
+  'Under 5 YEAR',
+] as const
 export const PLATEAU_STATE = 'PLATEAU' as const
 
 function canonicalPhoneNumber(value: string | undefined | null) {

@@ -27,8 +27,8 @@ describe('percentChange', () => {
 });
 
 describe('bucketEnrollmentCategory / normalizeCategoryBreakdown', () => {
-  it('maps unknown categories to Other', () => {
-    expect(bucketEnrollmentCategory('IDPs')).toBe('IDPs');
+  it('maps legacy and unknown categories', () => {
+    expect(bucketEnrollmentCategory('IDPs')).toBe('Internal displaced persons');
     expect(bucketEnrollmentCategory('Refugees')).toBe('Other');
   });
 
@@ -40,9 +40,13 @@ describe('bucketEnrollmentCategory / normalizeCategoryBreakdown', () => {
         { category: 'Refugees', count: 1 },
       ]),
     ).toEqual([
-      { category: 'IDPs', count: 3 },
-      { category: 'Elderly 65+', count: 0 },
-      { category: 'Indigents / Very Poor / Others', count: 0 },
+      { category: 'Elderly 65 and above', count: 0 },
+      { category: 'Indigent (very poor) / others', count: 0 },
+      { category: 'Internal displaced persons', count: 3 },
+      { category: 'Orphan', count: 0 },
+      { category: 'People Living with Disability', count: 0 },
+      { category: 'Pregnant Woman', count: 0 },
+      { category: 'Under 5 YEAR', count: 0 },
       { category: 'Other', count: 3 },
     ]);
   });

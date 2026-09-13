@@ -19,6 +19,10 @@ interface SearchableFilterSelectProps {
   loading?: boolean
   hasMore?: boolean
   loadingMore?: boolean
+  allowClear?: boolean
+  disabled?: boolean
+  labelClassName?: string
+  triggerAriaLabel?: string
   onLoadMore?: () => void
   onSearchChange: (value: string) => void
   onSelect: (option: SearchableFilterOption | null) => void
@@ -35,6 +39,10 @@ export function SearchableFilterSelect({
   loading = false,
   hasMore = false,
   loadingMore = false,
+  allowClear = true,
+  disabled = false,
+  labelClassName = 'text-xs font-medium text-muted-foreground',
+  triggerAriaLabel,
   onLoadMore,
   onSearchChange,
   onSelect,
@@ -42,18 +50,19 @@ export function SearchableFilterSelect({
   const [open, setOpen] = useState(false)
 
   return (
-    <div className="grid gap-1 text-xs font-medium text-muted-foreground">
-      <span>{label}</span>
-      <Popover.Root open={open} onOpenChange={(nextOpen) => { setOpen(nextOpen); if (!nextOpen) onSearchChange('') }}>
+    <div className="grid gap-1">
+      <span className={labelClassName}>{label}</span>
+      <Popover.Root open={open && !disabled} onOpenChange={(nextOpen) => { if (disabled) return; setOpen(nextOpen); if (!nextOpen) onSearchChange('') }}>
         <Popover.Trigger asChild>
           <button
             aria-expanded={open}
             aria-haspopup="listbox"
-            aria-label={`Filter by ${label.toLowerCase()}`}
-            className="flex h-10 min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 text-left text-sm font-normal text-foreground"
+            aria-label={triggerAriaLabel ?? `Filter by ${label.toLowerCase()}`}
+            className="flex h-10 min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 text-left text-sm font-normal text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={disabled}
             type="button"
           >
-            <span className="truncate">{value?.label ?? allLabel}</span>
+            <span className={`truncate ${value ? 'text-foreground' : 'text-muted-foreground'}`}>{value?.label ?? allLabel}</span>
             <ChevronsUpDown aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
           </button>
         </Popover.Trigger>
@@ -76,7 +85,7 @@ export function SearchableFilterSelect({
               {loading && <LoaderCircle aria-label="Loading options" className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />}
             </div>
             <div className="mt-2 max-h-60 overflow-y-auto" role="listbox">
-              <Popover.Close asChild>
+              {allowClear && <Popover.Close asChild>
                 <button
                   className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm font-normal text-foreground hover:bg-muted"
                   onClick={() => onSelect(null)}
@@ -87,7 +96,7 @@ export function SearchableFilterSelect({
                   {allLabel}
                   {!value && <Check aria-hidden="true" className="size-4 text-primary" />}
                 </button>
-              </Popover.Close>
+              </Popover.Close>}
               {options.map((option) => (
                 <Popover.Close asChild key={option.id}>
                   <button

@@ -15,7 +15,7 @@ function completeMember() {
   const member = createHouseholdMemberDraft('12 Test Road', '01900000-0000-7000-8000-000000000010')
   member.form = {
     ...EMPTY_ENROLLMENT_FORM,
-    category: 'IDPs',
+    category: 'Internal displaced persons',
     passportFileId: 'passport-file',
     passportName: 'passport.jpg',
     idDocumentFileId: 'id-file',

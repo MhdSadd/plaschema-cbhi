@@ -30,7 +30,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
   const baseInput = {
     idempotencyId: headIdempotencyId,
     capturedAt: '2026-09-09T10:00:00.000Z',
-    category: 'IDPs',
+    category: 'Internal displaced persons',
     passportObjectKey: 'passport.jpg',
     idDocumentObjectKey: 'id.jpg',
     title: 'mr' as const,
@@ -60,7 +60,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
     idempotencyId: headIdempotencyId,
     capturedAt: new Date('2026-09-09T10:00:00.000Z'),
     status: 'pending',
-    category: 'IDPs',
+    category: 'Internal displaced persons',
     enrolledByUserId: actor.id,
     wardId,
     healthFacilityId: facilityId,

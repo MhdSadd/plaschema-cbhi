@@ -281,7 +281,7 @@ model Enrollment {
 
   status EnrollmentStatus @default(pending)
 
-  /// Beneficiary category as shown in admin tables (e.g. IDPs, Elderly 65+).
+  /// Beneficiary category as shown in admin tables (programme category label).
   category String
 
   enrolledByUserId String @db.Uuid

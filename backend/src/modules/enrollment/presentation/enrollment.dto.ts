@@ -64,9 +64,9 @@ export class CreateEnrollmentDto {
   capturedAt?: string;
 
   @ApiProperty({
-    example: 'IDPs',
+    example: 'Internal displaced persons',
     description:
-      'Beneficiary category shown in admin tables (e.g. IDPs, Elderly 65+, Indigents / Very Poor / Others)',
+      'Beneficiary category (Elderly 65 and above, Indigent (very poor) / others, Internal displaced persons, Orphan, People Living with Disability, Pregnant Woman, Under 5 YEAR)',
   })
   @IsString()
   @IsNotEmpty()
@@ -270,7 +270,7 @@ export class ListEnrollmentsQueryDto {
 
   @ApiPropertyOptional({
     type: String,
-    example: 'IDPs',
+    example: 'Internal displaced persons',
     description: 'Exact beneficiary category',
   })
   @EmptyStringToUndefined()
@@ -492,7 +492,7 @@ export class EnrollmentListItemDto {
   @ApiProperty({ example: 'Musa Ibrahim' })
   beneficiaryName!: string;
 
-  @ApiProperty({ example: 'IDPs' })
+  @ApiProperty({ example: 'Internal displaced persons' })
   category!: string;
 
   @ApiProperty({ enum: ENROLLMENT_STATUSES, example: 'pending' })
@@ -567,7 +567,7 @@ export class EnrollmentResponseDto {
   @ApiProperty({ enum: ENROLLMENT_STATUSES, example: 'pending' })
   status!: EnrollmentStatus;
 
-  @ApiProperty({ example: 'IDPs' })
+  @ApiProperty({ example: 'Internal displaced persons' })
   category!: string;
 
   @ApiProperty({ format: 'uuid' })
@@ -805,7 +805,7 @@ export class ExportEnrollmentReportRequestDto {
   @IsEnum(ENROLLMENT_STATUSES)
   status?: EnrollmentStatus;
 
-  @ApiPropertyOptional({ type: String, example: 'IDPs' })
+  @ApiPropertyOptional({ type: String, example: 'Internal displaced persons' })
   @EmptyStringToUndefined()
   @IsOptional()
   @IsString()
