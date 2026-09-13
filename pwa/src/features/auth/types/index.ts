@@ -2,6 +2,7 @@ export type {
   AssignedWardApi,
   AuthStatus,
   AuthUserApi,
+  ChangePasswordPayload,
   FieldWorkerLoginResult,
   FieldWorkerUser,
   LoginPayload,
