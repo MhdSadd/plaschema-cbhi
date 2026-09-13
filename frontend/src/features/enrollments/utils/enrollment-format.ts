@@ -1,9 +1,13 @@
 export { PLATEAU_LGAS } from '@/lib/geography'
 
 export const BENEFICIARY_CATEGORIES = [
-  'IDPs',
-  'Elderly 65+',
-  'Indigents / Very Poor / Others',
+  'Elderly 65 and above',
+  'Indigent (very poor) / others',
+  'Internal displaced persons',
+  'Orphan',
+  'People Living with Disability',
+  'Pregnant Woman',
+  'Under 5 YEAR',
 ] as const
 
 export function formatEnrollmentDate(value: string | null, includeTime = false): string {

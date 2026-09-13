@@ -1,6 +1,6 @@
 # PLASCHEMA Project Handoff
 
-Last updated: 13 September 2026
+Last updated: 13 September 2026 (beneficiary category list expanded to seven programme categories)
 Last verified code commit: `177f909`
 
 ## Purpose
@@ -77,7 +77,7 @@ This is a pnpm workspace. The root scripts manage all three apps.
 - Ward, facility, field-worker and dashboard enrollment rows open the API-backed enrollment detail route.
 - ID Cards queues one to nine records through `POST /enrollments/id-cards/generate`. Excel exports use `POST /enrollments/reports/export`, reuse the supported filters selected on the enrollment list and summarize their scope before submission. An unfiltered export requires an explicit all-enrollments confirmation, while unsupported search and printed-state filters are explained before export.
 - Enrollment Ward, Facility and Field Worker filters use single searchable selectors instead of separate search inputs and dropdowns. Changing the Ward clears the selected Facility to prevent incompatible filters.
-- Admin enrollment and ID-card category filters use the same fixed programme categories as the PWA: IDPs, Elderly 65+, and Indigents / Very Poor / Others.
+- Admin enrollment and ID-card category filters use the same fixed programme categories as the PWA: Elderly 65 and above, Indigent (very poor) / others, Internal displaced persons, Orphan, People Living with Disability, Pregnant Woman, and Under 5 YEAR. Legacy labels (IDPs, Elderly 65+, Indigents / Very Poor / Others) are normalized on ingest and in dashboard breakdowns.
 - Files replaces Settings in the sidebar and uses `/file-jobs`, `/file-jobs/:id` and `/file-jobs/:id/download` for progress and fresh download links. The Settings route remains available but unlisted.
 - Enrollment creation remains in the field-worker PWA. Admin enrollment details remain read-only apart from activation/deactivation because production exposes no general update or delete endpoint. See `docs/enrollment-backend-feedback.md`.
 

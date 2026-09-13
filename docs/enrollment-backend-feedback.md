@@ -34,7 +34,7 @@ An overall total or summary endpoint would be needed for programme-wide enrollme
 
 ### 4. Categories have no lookup endpoint
 
-The API accepts an exact category string but does not provide a list of allowed or existing categories. The admin now uses the same three fixed programme categories as the PWA and dashboard: IDPs, Elderly 65+, and Indigents / Very Poor / Others.
+The API accepts an exact category string but does not provide a list of allowed or existing categories. The admin, PWA and dashboard share the same seven fixed programme categories: Elderly 65 and above, Indigent (very poor) / others, Internal displaced persons, Orphan, People Living with Disability, Pregnant Woman, and Under 5 YEAR. Legacy labels are normalized on enrollment ingest and in dashboard breakdowns.
 
 A category lookup endpoint or fixed documented enum would keep this frontend list authoritative if programme categories change later.
 

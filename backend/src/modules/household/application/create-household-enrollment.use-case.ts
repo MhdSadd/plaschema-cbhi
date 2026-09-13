@@ -6,6 +6,7 @@ import {
   OBJECT_STORAGE,
   type ObjectStorage,
 } from '../../../platform/storage/object-storage';
+import { normalizeBeneficiaryCategory } from '../../../shared/beneficiary-categories';
 import { normalizePlaceName, toTitleCase } from '../../../shared/text';
 import { RecordActivityUseCase } from '../../activity-log/application/record-activity.use-case';
 import {
@@ -353,7 +354,7 @@ export class CreateHouseholdEnrollmentUseCase {
         idempotencyId: input.idempotencyId,
         capturedAt,
         status: 'pending' as const,
-        category: collapseAddress(input.category),
+        category: normalizeBeneficiaryCategory(collapseAddress(input.category)),
         enrolledByUserId: actor.id,
         wardId: input.wardId,
         healthFacilityId: input.healthFacilityId,

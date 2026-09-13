@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { AuthenticatedUser } from '../../../platform/auth/current-user.decorator';
 import { AppError } from '../../../platform/http/app-error';
+import { normalizeBeneficiaryCategory } from '../../../shared/beneficiary-categories';
 import { normalizePlaceName, toTitleCase } from '../../../shared/text';
 import {
   HEALTH_FACILITY_REPOSITORY,
@@ -112,7 +113,7 @@ export class UpdateEnrollmentUseCase {
     const changedFields: string[] = [];
 
     if (input.category !== undefined) {
-      const category = collapseAddress(input.category);
+      const category = normalizeBeneficiaryCategory(collapseAddress(input.category));
       if (category !== existing.category) {
         patch.category = category;
         changedFields.push(PROFILE_FIELD_LABELS.category);
