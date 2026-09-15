@@ -102,7 +102,7 @@ export class WardController {
           type: 'string',
           format: 'binary',
           description:
-            'CSV or Excel (.xlsx/.xls) with columns: name,lga (code is derived as `<LGA_3>-<NAME_3>`)',
+            'CSV or Excel (.xlsx/.xls) with columns: name,lga and optional code (when code is present it is used; otherwise code is derived as `<LGA_3>-<NAME_3>`)',
         },
       },
     },

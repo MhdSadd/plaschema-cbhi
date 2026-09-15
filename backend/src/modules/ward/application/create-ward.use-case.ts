@@ -3,7 +3,11 @@ import { AppError } from '../../../platform/http/app-error';
 import { createUuidV7 } from '../../../platform/ids/uuid-v7';
 import { normalizePlaceName } from '../../../shared/text';
 import type { WardStatus } from '../domain/ward';
-import { deriveWardCodeBase, resolveUniqueWardCode } from '../domain/ward-code';
+import {
+  deriveWardCodeBase,
+  extractLgaPrefixFromWardCode,
+  resolveUniqueWardCode,
+} from '../domain/ward-code';
 import { WARD_REPOSITORY, type WardRepository } from './ward.repository';
 
 @Injectable()
@@ -39,10 +43,20 @@ export class CreateWardUseCase {
       );
     }
 
-    const code = await resolveUniqueWardCode(lga, name, async (candidate) => {
-      const existingCode = await this.wards.findByCode(candidate);
-      return existingCode !== null;
-    });
+    const existingInLga = await this.wards.findOneByLga(lga);
+    const lgaPrefix = existingInLga
+      ? extractLgaPrefixFromWardCode(existingInLga.code)
+      : undefined;
+
+    const code = await resolveUniqueWardCode(
+      lga,
+      name,
+      async (candidate) => {
+        const existingCode = await this.wards.findByCode(candidate);
+        return existingCode !== null;
+      },
+      lgaPrefix ? { lgaPrefix } : undefined,
+    );
 
     return this.wards.create({
       id: createUuidV7(),

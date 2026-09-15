@@ -71,7 +71,7 @@ Clean Architecture only (no DDD / bounded contexts). Feature modules:
 - `POST /api/users/:id/reset-password` (admin only; no email)
 - `GET /api/users` — cursor list; with `role=field_worker` returns wards + enrollment stats (`beneficiariesEnrolled`, `lastEnrollmentAt`, `lastSyncedAt`)
 - `GET /api/users/:id/detail` — field worker detail for admin **or the worker’s own profile** (`fieldWorker` overview with `lastSyncedAt`, `stats` with `totalEnrolled` / `enrollmentsToday` / `enrollmentsThisMonth`, `wards`, unified `activityLog`). Field workers may only request their own `id`. Beneficiaries tab uses `GET /api/enrollments?enrolledByUserId=`
-- `POST /api/wards/batch` — CSV or Excel (.xlsx/.xls); columns: `name,lga` (code derived as `<LGA_3>-<NAME_3>`, suffixed when needed for uniqueness)
+- `POST /api/wards/batch` — CSV or Excel (.xlsx/.xls); columns: `name,lga` and optional `code` (when present, used as-is after normalization; otherwise derived as `<LGA_3>-<NAME_3>` using an existing LGA prefix when wards already exist in that LGA)
 - `GET /api/wards` — cursor list for wards table (`code`, `name`, `state`, `lga`, `fieldWorkers`, `beneficiaries`, `newEnrollments`, `status`)
 - `GET /api/wards/:id/detail` — admin ward detail page payload (`ward`, `stats`, `enrollmentTrend`, `fieldWorkers`, `healthFacilities`, unified `activityLog`). Beneficiaries tab uses `GET /api/enrollments?wardId=`
 - `PUT /api/wards/:id/field-workers` — assign multiple field workers to a ward (`fieldWorkerIds[]`; replaces existing assignments for that ward; returns `{ message }`)

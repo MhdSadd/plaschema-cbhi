@@ -10,6 +10,10 @@ import { normalizePlaceName } from '../../../shared/text';
 import {
   allocateUniqueWardCode,
   deriveWardCodeBase,
+  deriveWardCodeBaseFromLgaPrefix,
+  extractLgaPrefixFromWardCode,
+  extractWardCodePrefix,
+  normalizeWardCode,
 } from '../domain/ward-code';
 import {
   WARD_REPOSITORY,
@@ -17,7 +21,10 @@ import {
   type WardRepository,
 } from './ward.repository';
 
-type PendingWard = Omit<CreateWardInput, 'code'> & { row: number };
+type PendingWard = Omit<CreateWardInput, 'code'> & {
+  row: number;
+  explicitCode?: string;
+};
 
 @Injectable()
 export class BatchCreateWardsUseCase {
@@ -32,14 +39,21 @@ export class BatchCreateWardsUseCase {
     const rawRows = parseTabularBuffer(fileBuffer, { filename });
     requireCsvColumns(rawRows, ['name', 'lga']);
 
+    const headers = Object.keys(rawRows[0] ?? {}).map((header) =>
+      header.trim().toLowerCase(),
+    );
+    const hasCodeColumn = headers.includes('code');
+
     const errors: BatchUploadResult['errors'] = [];
     const pendingByName = new Map<string, PendingWard>();
+    const pendingByCode = new Map<string, number>();
 
     rawRows.forEach((raw, index) => {
       const rowNumber = index + 2;
       const row = normalizeCsvRow(raw);
       const name = normalizePlaceName(row.name ?? '');
       const lga = normalizePlaceName(row.lga ?? '');
+      const rawCode = hasCodeColumn ? (row.code ?? '').trim() : '';
 
       if (!name || !lga) {
         errors.push({ row: rowNumber, message: 'name and lga are required' });
@@ -54,14 +68,36 @@ export class BatchCreateWardsUseCase {
         return;
       }
 
-      try {
-        deriveWardCodeBase(lga, name);
-      } catch {
-        errors.push({
-          row: rowNumber,
-          message: 'name and lga must each contain at least one letter',
-        });
-        return;
+      let explicitCode: string | undefined;
+      if (rawCode) {
+        explicitCode = normalizeWardCode(rawCode);
+        if (!extractWardCodePrefix(explicitCode)) {
+          errors.push({
+            row: rowNumber,
+            message: 'code must contain at least one letter',
+          });
+          return;
+        }
+
+        const codeKey = explicitCode.toLowerCase();
+        if (pendingByCode.has(codeKey)) {
+          errors.push({
+            row: rowNumber,
+            message: `Duplicate ward code in file: ${explicitCode}`,
+          });
+          return;
+        }
+        pendingByCode.set(codeKey, rowNumber);
+      } else {
+        try {
+          deriveWardCodeBase(lga, name);
+        } catch {
+          errors.push({
+            row: rowNumber,
+            message: 'name and lga must each contain at least one letter',
+          });
+          return;
+        }
       }
 
       const nameKey = name.toLowerCase();
@@ -79,18 +115,37 @@ export class BatchCreateWardsUseCase {
         lga,
         status: 'active',
         row: rowNumber,
+        explicitCode,
       });
     });
 
     const candidates = [...pendingByName.values()];
-    const [existingByName, takenCodes] = await Promise.all([
+    const uniqueLgas = [...new Set(candidates.map((ward) => ward.lga))];
+    const [existingByName, takenCodes, existingInLgas] = await Promise.all([
       this.wards.findByNames(candidates.map((ward) => ward.name)),
       this.wards.listCodes(),
+      Promise.all(
+        uniqueLgas.map(async (lga) => ({
+          lga,
+          ward: await this.wards.findOneByLga(lga),
+        })),
+      ),
     ]);
     const existingNames = new Set(
       existingByName.map((ward) => ward.name.toLowerCase()),
     );
-    const reservedCodes = new Set(takenCodes);
+    const reservedCodes = new Set(
+      takenCodes.map((code) => code.toLowerCase()),
+    );
+    const lgaPrefixByLga = new Map<string, string>();
+    for (const { lga, ward } of existingInLgas) {
+      if (ward) {
+        lgaPrefixByLga.set(
+          lga.toLowerCase(),
+          extractLgaPrefixFromWardCode(ward.code),
+        );
+      }
+    }
 
     const toCreate: CreateWardInput[] = [];
     for (const candidate of candidates) {
@@ -102,9 +157,31 @@ export class BatchCreateWardsUseCase {
         continue;
       }
 
-      const base = deriveWardCodeBase(candidate.lga, candidate.name);
-      const code = allocateUniqueWardCode(base, reservedCodes);
-      reservedCodes.add(code);
+      let code: string;
+      if (candidate.explicitCode) {
+        const codeKey = candidate.explicitCode.toLowerCase();
+        if (reservedCodes.has(codeKey)) {
+          errors.push({
+            row: candidate.row,
+            message: `Ward code already exists: ${candidate.explicitCode}`,
+          });
+          continue;
+        }
+        code = candidate.explicitCode;
+      } else {
+        const lgaKey = candidate.lga.toLowerCase();
+        const knownLgaPrefix = lgaPrefixByLga.get(lgaKey);
+        const base = knownLgaPrefix
+          ? deriveWardCodeBaseFromLgaPrefix(knownLgaPrefix, candidate.name)
+          : deriveWardCodeBase(candidate.lga, candidate.name);
+        code = allocateUniqueWardCode(base, reservedCodes);
+      }
+
+      reservedCodes.add(code.toLowerCase());
+      lgaPrefixByLga.set(
+        candidate.lga.toLowerCase(),
+        extractLgaPrefixFromWardCode(code),
+      );
 
       toCreate.push({
         id: candidate.id,

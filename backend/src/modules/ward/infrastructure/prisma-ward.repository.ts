@@ -50,6 +50,12 @@ export class PrismaWardRepository implements WardRepository {
     return this.prisma.ward.findUnique({ where: { name } });
   }
 
+  findOneByLga(lga: string): Promise<Ward | null> {
+    return this.prisma.ward.findFirst({
+      where: { lga: { equals: lga, mode: 'insensitive' } },
+    });
+  }
+
   findByNames(names: string[]): Promise<Ward[]> {
     if (names.length === 0) {
       return Promise.resolve([]);
