@@ -19,6 +19,13 @@ const TOP_FACILITIES = 5;
 const TOP_WORKERS = 10;
 const RECENT_ENROLLMENTS = 5;
 
+const HOUSEHOLD_SIZE_BUCKETS = [
+  { label: '1 member', min: 1, max: 1 },
+  { label: '2–3 members', min: 2, max: 3 },
+  { label: '4–5 members', min: 4, max: 5 },
+  { label: '6+ members', min: 6, max: Number.MAX_SAFE_INTEGER },
+] as const;
+
 @Injectable()
 export class PrismaDashboardRepository implements DashboardRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -34,12 +41,21 @@ export class PrismaDashboardRepository implements DashboardRepository {
     window: DashboardPeriodWindow,
   ): Promise<Omit<DashboardOverview, 'filters' | 'recentActivity'>> {
     const geo = this.geoWhere(query);
+    const householdGeo = this.householdGeoWhere(query);
     const periodCreated = {
       ...geo,
       createdAt: { gte: window.start, lte: window.end },
     };
     const previousCreated = {
       ...geo,
+      createdAt: { gte: window.previousStart, lte: window.previousEnd },
+    };
+    const householdPeriodCreated = {
+      ...householdGeo,
+      createdAt: { gte: window.start, lte: window.end },
+    };
+    const householdPreviousCreated = {
+      ...householdGeo,
       createdAt: { gte: window.previousStart, lte: window.previousEnd },
     };
 
@@ -65,6 +81,14 @@ export class PrismaDashboardRepository implements DashboardRepository {
       topFacilityGroups,
       workerEnrollmentGroups,
       recentEnrollmentRows,
+      totalHouseholds,
+      newHouseholds,
+      previousNewHouseholds,
+      householdMemberStats,
+      householdMemberCountGroups,
+      householdWardGroups,
+      householdLgaGroups,
+      householdTrendRows,
     ] = await Promise.all([
       this.prisma.enrollment.count({ where: geo }),
       this.prisma.enrollment.count({ where: { ...geo, status: 'active' } }),
@@ -145,12 +169,43 @@ export class PrismaDashboardRepository implements DashboardRepository {
           healthFacility: { select: { id: true, name: true } },
         },
       }),
+      this.prisma.household.count({ where: householdGeo }),
+      this.prisma.household.count({ where: householdPeriodCreated }),
+      this.prisma.household.count({ where: householdPreviousCreated }),
+      this.prisma.household.aggregate({
+        where: householdGeo,
+        _sum: { memberCount: true },
+        _avg: { memberCount: true },
+      }),
+      this.prisma.household.groupBy({
+        by: ['memberCount'],
+        where: householdGeo,
+        _count: { _all: true },
+      }),
+      this.prisma.household.groupBy({
+        by: ['wardId'],
+        where: householdPeriodCreated,
+        _count: { _all: true },
+        orderBy: { _count: { wardId: 'desc' } },
+        take: TOP_WARDS,
+      }),
+      this.prisma.household.groupBy({
+        by: ['wardId'],
+        where: householdPeriodCreated,
+        _count: { _all: true },
+      }),
+      this.prisma.household.findMany({
+        where: householdPeriodCreated,
+        select: { createdAt: true },
+      }),
     ]);
 
     const wardIds = [
       ...new Set([
         ...wardGroups.map((row) => row.wardId),
         ...lgaGroups.map((row) => row.wardId),
+        ...householdWardGroups.map((row) => row.wardId),
+        ...householdLgaGroups.map((row) => row.wardId),
       ]),
     ];
     const wards =
@@ -180,6 +235,68 @@ export class PrismaDashboardRepository implements DashboardRepository {
     const enrollmentByLga = [...lgaTotals.entries()]
       .map(([lga, count]) => ({ lga, count }))
       .sort((a, b) => b.count - a.count);
+
+    const householdByWard = householdWardGroups.map((row) => {
+      const ward = wardById.get(row.wardId);
+      return {
+        wardId: row.wardId,
+        name: ward?.name ?? 'Unknown ward',
+        count: row._count._all,
+      };
+    });
+
+    const householdLgaTotals = new Map<string, number>();
+    for (const row of householdLgaGroups) {
+      const lga = wardById.get(row.wardId)?.lga;
+      if (!lga) continue;
+      householdLgaTotals.set(
+        lga,
+        (householdLgaTotals.get(lga) ?? 0) + row._count._all,
+      );
+    }
+    const householdByLga = [...householdLgaTotals.entries()]
+      .map(([lga, count]) => ({ lga, count }))
+      .sort((a, b) => b.count - a.count);
+
+    const householdSizeBreakdown = HOUSEHOLD_SIZE_BUCKETS.map((bucket) => ({
+      label: bucket.label,
+      count: householdMemberCountGroups.reduce((sum, row) => {
+        if (
+          row.memberCount >= bucket.min &&
+          row.memberCount <= bucket.max
+        ) {
+          return sum + row._count._all;
+        }
+        return sum;
+      }, 0),
+    }));
+
+    const householdBuckets = buildTrendBuckets(
+      query.trend,
+      window.start,
+      window.end,
+    );
+    const householdCountsByBucket = new Map<string, number>();
+    for (const row of householdTrendRows) {
+      const key = trendBucketKeyForDate(query.trend, row.createdAt);
+      householdCountsByBucket.set(
+        key,
+        (householdCountsByBucket.get(key) ?? 0) + 1,
+      );
+    }
+    const householdPoints = householdBuckets.map((bucket) => ({
+      key: bucket.key,
+      label: bucket.label,
+      count: householdCountsByBucket.get(bucket.key) ?? 0,
+    }));
+    const householdTrendTotal = householdPoints.reduce(
+      (sum, point) => sum + point.count,
+      0,
+    );
+    const householdAverage =
+      householdPoints.length === 0
+        ? 0
+        : Math.round((householdTrendTotal / householdPoints.length) * 10) / 10;
 
     const buckets = buildTrendBuckets(query.trend, window.start, window.end);
     const countsByBucket = new Map<string, number>();
@@ -292,6 +409,14 @@ export class PrismaDashboardRepository implements DashboardRepository {
             previousNewEnrollments,
           ),
         },
+        totalHouseholds: {
+          value: totalHouseholds,
+          changePercent: percentChange(newHouseholds, previousNewHouseholds),
+        },
+        newHouseholds: {
+          value: newHouseholds,
+          changePercent: percentChange(newHouseholds, previousNewHouseholds),
+        },
         totalFacilities: {
           value: totalFacilities,
           changeAbsolute:
@@ -310,6 +435,20 @@ export class PrismaDashboardRepository implements DashboardRepository {
         granularity: query.trend,
         points,
       },
+      householdOverview: {
+        totalMembers: householdMemberStats._sum.memberCount ?? 0,
+        averageMembersPerHousehold:
+          Math.round((householdMemberStats._avg.memberCount ?? 0) * 10) / 10,
+      },
+      householdTrend: {
+        total: householdTrendTotal,
+        average: householdAverage,
+        granularity: query.trend,
+        points: householdPoints,
+      },
+      householdByWard,
+      householdByLga,
+      householdSizeBreakdown,
       enrollmentByCategory: normalizeCategoryBreakdown(
         categoryRows.map((row) => ({
           category: row.category,
@@ -358,6 +497,18 @@ export class PrismaDashboardRepository implements DashboardRepository {
   }
 
   private geoWhere(query: DashboardQuery): Prisma.EnrollmentWhereInput {
+    if (query.wardId) {
+      return { wardId: query.wardId };
+    }
+    if (query.lga) {
+      return { ward: { lga: query.lga } };
+    }
+    return {};
+  }
+
+  private householdGeoWhere(
+    query: DashboardQuery,
+  ): Prisma.HouseholdWhereInput {
     if (query.wardId) {
       return { wardId: query.wardId };
     }

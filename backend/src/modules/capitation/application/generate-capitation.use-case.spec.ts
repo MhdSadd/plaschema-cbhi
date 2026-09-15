@@ -1,6 +1,11 @@
+import { DEFAULT_CAPITATION_TIERS } from '../domain/capitation';
 import type { AppConfigService } from '../../../platform/config/app-config.service';
 import type { CapitationRepository } from './capitation.repository';
 import { GenerateCapitationUseCase } from './generate-capitation.use-case';
+
+jest.mock('../../ward/domain/ward-date', () => ({
+  currentMonthYearInLagos: () => ({ month: 8, year: 2026 }),
+}));
 
 describe('GenerateCapitationUseCase', () => {
   const actor = {
@@ -13,7 +18,7 @@ describe('GenerateCapitationUseCase', () => {
   };
 
   let capitation: jest.Mocked<CapitationRepository>;
-  let config: Pick<AppConfigService, 'capitationRate'>;
+  let config: Pick<AppConfigService, 'defaultCapitationTiers'>;
   let useCase: GenerateCapitationUseCase;
 
   beforeEach(() => {
@@ -22,22 +27,26 @@ describe('GenerateCapitationUseCase', () => {
       createRun: jest.fn(),
     } as unknown as jest.Mocked<CapitationRepository>;
 
-    config = { capitationRate: 700 };
+    config = { defaultCapitationTiers: DEFAULT_CAPITATION_TIERS };
     useCase = new GenerateCapitationUseCase(
       capitation,
       config as AppConfigService,
     );
   });
 
-  it('generates capitation for all active facilities using the default rate', async () => {
+  it('generates capitation for all active facilities using the default tiers', async () => {
     const records = [
       {
         healthFacilityId: 'fac-1',
         facilityName: 'Tudun Wada PHC',
         lga: 'Jos North',
         beneficiaryCount: 2,
-        rate: 700,
-        amount: 1400,
+        amount: 650_000,
+        tierMin: 1,
+        tierMax: 4999,
+        tierAmount: 650_000,
+        tierLabel: '1 – 4,999',
+        rate: null,
       },
     ];
 
@@ -46,34 +55,42 @@ describe('GenerateCapitationUseCase', () => {
       runId: 'run-1',
       month: 8,
       year: 2026,
-      rate: 700,
+      tiers: DEFAULT_CAPITATION_TIERS,
+      rate: null,
       generatedAt: new Date('2026-08-30T00:00:00.000Z'),
       totalFacilities: 1,
       totalBeneficiaries: 2,
-      totalCapitation: 1400,
+      totalCapitation: 650_000,
       recordCount: 1,
     });
 
     const result = await useCase.execute(actor, { month: 8, year: 2026 });
 
-    expect(capitation.computeRecords).toHaveBeenCalledWith(700);
+    expect(capitation.computeRecords).toHaveBeenCalledWith(
+      DEFAULT_CAPITATION_TIERS,
+    );
     expect(capitation.createRun).toHaveBeenCalledWith({
       month: 8,
       year: 2026,
-      rate: 700,
+      tiers: DEFAULT_CAPITATION_TIERS,
       createdByUserId: actor.id,
       records,
     });
-    expect(result.totalCapitation).toBe(1400);
+    expect(result.totalCapitation).toBe(650_000);
   });
 
-  it('allows overriding the default rate per request', async () => {
+  it('allows overriding tiers per request', async () => {
+    const customTiers = [
+      { minEnrollees: 1, maxEnrollees: null, amount: 500_000 },
+    ];
+
     capitation.computeRecords.mockResolvedValue([]);
     capitation.createRun.mockResolvedValue({
       runId: 'run-1',
       month: 8,
       year: 2026,
-      rate: 570,
+      tiers: customTiers,
+      rate: null,
       generatedAt: new Date('2026-08-30T00:00:00.000Z'),
       totalFacilities: 0,
       totalBeneficiaries: 0,
@@ -81,11 +98,11 @@ describe('GenerateCapitationUseCase', () => {
       recordCount: 0,
     });
 
-    await useCase.execute(actor, { month: 8, year: 2026, rate: 570 });
+    await useCase.execute(actor, { month: 8, year: 2026, tiers: customTiers });
 
-    expect(capitation.computeRecords).toHaveBeenCalledWith(570);
+    expect(capitation.computeRecords).toHaveBeenCalledWith(customTiers);
     expect(capitation.createRun).toHaveBeenCalledWith(
-      expect.objectContaining({ rate: 570 }),
+      expect.objectContaining({ tiers: customTiers }),
     );
   });
 });

@@ -67,24 +67,33 @@ describe('ListCapitationsUseCase', () => {
           year: 2026,
           period: 'August 2026',
           beneficiaryCount: 2,
-          rate: 700,
-          amount: 1400,
+          amount: 650_000,
+          tierMin: 1,
+          tierMax: 4999,
+          tierAmount: 650_000,
+          tierLabel: '1 – 4,999',
+          rate: null,
         },
       ],
       summary: {
         runId: 'run-1',
         month: 8,
         year: 2026,
-        rate: 700,
+        tiers: [
+          { minEnrollees: 1, maxEnrollees: 4999, amount: 650_000 },
+          { minEnrollees: 5000, maxEnrollees: 10_000, amount: 830_000 },
+          { minEnrollees: 10_001, maxEnrollees: null, amount: 1_000_000 },
+        ],
+        rate: null,
         generatedAt: new Date('2026-08-30T00:00:00.000Z'),
         totalFacilities: 1,
         totalBeneficiaries: 2,
-        totalCapitation: 1400,
+        totalCapitation: 650_000,
       },
       filteredSummary: {
         totalFacilities: 1,
         totalBeneficiaries: 2,
-        totalCapitation: 1400,
+        totalCapitation: 650_000,
       },
       nextCursor: null,
       hasMore: false,
@@ -100,8 +109,8 @@ describe('ListCapitationsUseCase', () => {
     });
 
     expect(result.data).toHaveLength(1);
-    expect(result.summary?.totalCapitation).toBe(1400);
-    expect(result.filteredSummary?.totalCapitation).toBe(1400);
+    expect(result.summary?.totalCapitation).toBe(650_000);
+    expect(result.filteredSummary?.totalCapitation).toBe(650_000);
     expect(result.meta.hasMore).toBe(false);
     expect(result.meta.total).toBe(1);
   });

@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppConfigService } from '../../../platform/config/app-config.service';
-import type { CapitationPreviewResult } from '../domain/capitation';
+import type { CapitationPreviewResult, CapitationTier } from '../domain/capitation';
 import {
   CAPITATION_REPOSITORY,
   type CapitationRepository,
 } from './capitation.repository';
+import { resolveCapitationTiers } from './resolve-capitation-tiers';
 
 @Injectable()
 export class PreviewCapitationUseCase {
@@ -17,9 +18,9 @@ export class PreviewCapitationUseCase {
   execute(input: {
     month: number;
     year: number;
-    rate?: number;
+    tiers?: CapitationTier[];
   }): Promise<CapitationPreviewResult> {
-    const rate = input.rate ?? this.config.capitationRate;
-    return this.capitation.preview(input.month, input.year, rate);
+    const tiers = resolveCapitationTiers(this.config, input.tiers);
+    return this.capitation.preview(input.month, input.year, tiers);
   }
 }

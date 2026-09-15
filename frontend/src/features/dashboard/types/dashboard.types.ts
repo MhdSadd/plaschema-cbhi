@@ -100,9 +100,24 @@ export interface DashboardOverview {
     activeBeneficiaries: DashboardPercentKpi
     inactiveBeneficiaries: DashboardPercentKpi
     newEnrollments: DashboardPercentKpi
+    totalHouseholds: DashboardPercentKpi
+    newHouseholds: DashboardPercentKpi
     totalFacilities: DashboardAbsoluteKpi
     fieldWorkers: DashboardAbsoluteKpi
   }
+  householdOverview: {
+    totalMembers: number
+    averageMembersPerHousehold: number
+  }
+  householdTrend: {
+    total: number
+    average: number
+    granularity: DashboardTrendGranularity
+    points: DashboardTrendPoint[]
+  }
+  householdByWard: Array<{ wardId: string; name: string; count: number }>
+  householdByLga: Array<{ lga: string; count: number }>
+  householdSizeBreakdown: Array<{ label: string; count: number }>
   enrollmentTrend: {
     total: number
     average: number

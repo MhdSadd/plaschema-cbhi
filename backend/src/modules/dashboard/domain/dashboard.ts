@@ -100,9 +100,24 @@ export type DashboardOverview = {
     activeBeneficiaries: KpiPercentChange;
     inactiveBeneficiaries: KpiPercentChange;
     newEnrollments: KpiPercentChange;
+    totalHouseholds: KpiPercentChange;
+    newHouseholds: KpiPercentChange;
     totalFacilities: KpiAbsoluteChange;
     fieldWorkers: KpiAbsoluteChange;
   };
+  householdOverview: {
+    totalMembers: number;
+    averageMembersPerHousehold: number;
+  };
+  householdTrend: {
+    total: number;
+    average: number;
+    granularity: DashboardTrendGranularity;
+    points: DashboardTrendPoint[];
+  };
+  householdByWard: Array<{ wardId: string; name: string; count: number }>;
+  householdByLga: Array<{ lga: string; count: number }>;
+  householdSizeBreakdown: Array<{ label: string; count: number }>;
   enrollmentTrend: {
     total: number;
     average: number;

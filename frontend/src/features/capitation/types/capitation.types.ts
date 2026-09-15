@@ -1,5 +1,11 @@
 import type { CursorPaginationMeta } from '@/api'
 
+export interface CapitationTier {
+  minEnrollees: number
+  maxEnrollees: number | null
+  amount: number
+}
+
 export interface CapitationRecord {
   id: string
   healthFacilityId: string
@@ -9,15 +15,20 @@ export interface CapitationRecord {
   year: number
   period: string
   beneficiaryCount: number
-  rate: number
   amount: number
+  tierMin: number | null
+  tierMax: number | null
+  tierAmount: number | null
+  tierLabel: string | null
+  rate: number | null
 }
 
 export interface CapitationSummary {
   runId: string
   month: number
   year: number
-  rate: number
+  tiers: CapitationTier[] | null
+  rate: number | null
   generatedAt: string
   totalFacilities: number
   totalBeneficiaries: number
@@ -52,14 +63,18 @@ export interface CapitationPreviewRecord {
   facilityName: string
   lga: string
   beneficiaryCount: number
-  rate: number
   amount: number
+  tierMin: number | null
+  tierMax: number | null
+  tierAmount: number | null
+  tierLabel: string | null
+  rate: number | null
 }
 
 export interface CapitationPreview {
   month: number
   year: number
-  rate: number
+  tiers: CapitationTier[]
   totalFacilities: number
   totalBeneficiaries: number
   totalCapitation: number
@@ -69,6 +84,7 @@ export interface CapitationPreview {
 export interface GenerateCapitationPayload {
   month: number
   year: number
+  tiers: CapitationTier[]
 }
 
 export interface GenerateCapitationResult extends CapitationSummary {

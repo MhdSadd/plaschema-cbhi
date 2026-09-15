@@ -1,6 +1,8 @@
+import { BadRequestException } from '@nestjs/common';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
+  IsArray,
   IsInt,
   IsOptional,
   IsString,
@@ -9,12 +11,66 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateNested,
 } from 'class-validator';
 import {
   EmptyStringToUndefined,
   toQueryInt,
 } from '../../../platform/http/query-transforms';
 import { CursorPaginationMetaDto } from '../../../platform/http/cursor-pagination.dto';
+import {
+  CapitationTierValidationError,
+  type CapitationTier,
+  validateCapitationTiers,
+} from '../domain/capitation';
+
+export class CapitationTierDto {
+  @ApiProperty({ example: 1, minimum: 1 })
+  @IsInt()
+  @Min(1)
+  minEnrollees!: number;
+
+  @ApiPropertyOptional({
+    example: 4999,
+    nullable: true,
+    description: 'Inclusive upper bound; null means open-ended (last tier only)',
+  })
+  @Transform(({ value }) => (value === '' || value === undefined ? null : value))
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  maxEnrollees!: number | null;
+
+  @ApiProperty({ example: 650000, minimum: 1 })
+  @IsInt()
+  @Min(1)
+  amount!: number;
+}
+
+function parseTiersQuery(value: unknown): CapitationTier[] | undefined {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  let parsed: unknown = value;
+  if (typeof value === 'string') {
+    parsed = JSON.parse(value) as unknown;
+  }
+
+  if (!Array.isArray(parsed)) {
+    return undefined;
+  }
+
+  try {
+    return validateCapitationTiers(parsed as CapitationTier[]);
+  } catch (error) {
+    const message =
+      error instanceof CapitationTierValidationError
+        ? error.message
+        : 'Invalid capitation tiers';
+    throw new BadRequestException(message);
+  }
+}
 
 export class CapitationPeriodQueryDto {
   @ApiProperty({ example: 8, minimum: 1, maximum: 12 })
@@ -32,16 +88,15 @@ export class CapitationPeriodQueryDto {
   year!: number;
 
   @ApiPropertyOptional({
-    example: 700,
-    description: 'Override default CAPITATION_RATE from server config',
+    type: String,
+    description: 'JSON array of capitation tiers; defaults to server configuration',
+    example:
+      '[{"minEnrollees":1,"maxEnrollees":4999,"amount":650000},{"minEnrollees":5000,"maxEnrollees":10000,"amount":830000},{"minEnrollees":10001,"maxEnrollees":null,"amount":1000000}]',
   })
-  @Transform(({ value }) =>
-    value === undefined || value === '' ? undefined : toQueryInt(value, 0, { min: 1 }),
-  )
+  @Transform(({ value }) => parseTiersQuery(value))
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  rate?: number;
+  @IsArray()
+  tiers?: CapitationTier[];
 }
 
 export class GenerateCapitationDto {
@@ -58,13 +113,14 @@ export class GenerateCapitationDto {
   year!: number;
 
   @ApiPropertyOptional({
-    example: 700,
-    description: 'Override default CAPITATION_RATE from server config',
+    type: [CapitationTierDto],
+    description: 'Capitation tiers; defaults to server configuration when omitted',
   })
   @IsOptional()
-  @IsInt()
-  @Min(1)
-  rate?: number;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CapitationTierDto)
+  tiers?: CapitationTierDto[];
 }
 
 export class ListCapitationsQueryDto {
@@ -145,6 +201,17 @@ export class ListCapitationsQueryDto {
   search?: string;
 }
 
+export class CapitationTierResponseDto {
+  @ApiProperty()
+  minEnrollees!: number;
+
+  @ApiProperty({ nullable: true })
+  maxEnrollees!: number | null;
+
+  @ApiProperty()
+  amount!: number;
+}
+
 export class CapitationRecordDraftDto {
   @ApiProperty({ format: 'uuid' })
   healthFacilityId!: string;
@@ -159,10 +226,22 @@ export class CapitationRecordDraftDto {
   beneficiaryCount!: number;
 
   @ApiProperty()
-  rate!: number;
-
-  @ApiProperty()
   amount!: number;
+
+  @ApiProperty({ nullable: true })
+  tierMin!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierMax!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierAmount!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierLabel!: string | null;
+
+  @ApiProperty({ nullable: true, description: 'Legacy flat rate per beneficiary' })
+  rate!: number | null;
 }
 
 export class CapitationPreviewResponseDto {
@@ -172,8 +251,8 @@ export class CapitationPreviewResponseDto {
   @ApiProperty()
   year!: number;
 
-  @ApiProperty()
-  rate!: number;
+  @ApiProperty({ type: [CapitationTierResponseDto] })
+  tiers!: CapitationTierResponseDto[];
 
   @ApiProperty()
   totalFacilities!: number;
@@ -198,8 +277,11 @@ export class CapitationGenerateResponseDto {
   @ApiProperty()
   year!: number;
 
-  @ApiProperty()
-  rate!: number;
+  @ApiProperty({ type: [CapitationTierResponseDto], nullable: true })
+  tiers!: CapitationTierResponseDto[] | null;
+
+  @ApiProperty({ nullable: true, description: 'Legacy flat rate per beneficiary' })
+  rate!: number | null;
 
   @ApiProperty()
   generatedAt!: Date;
@@ -243,10 +325,22 @@ export class CapitationRecordListItemDto {
   beneficiaryCount!: number;
 
   @ApiProperty()
-  rate!: number;
-
-  @ApiProperty()
   amount!: number;
+
+  @ApiProperty({ nullable: true })
+  tierMin!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierMax!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierAmount!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierLabel!: string | null;
+
+  @ApiProperty({ nullable: true, description: 'Legacy flat rate per beneficiary' })
+  rate!: number | null;
 }
 
 export class CapitationListSummaryDto {
@@ -259,8 +353,11 @@ export class CapitationListSummaryDto {
   @ApiProperty()
   year!: number;
 
-  @ApiProperty()
-  rate!: number;
+  @ApiProperty({ type: [CapitationTierResponseDto], nullable: true })
+  tiers!: CapitationTierResponseDto[] | null;
+
+  @ApiProperty({ nullable: true, description: 'Legacy flat rate per beneficiary' })
+  rate!: number | null;
 
   @ApiProperty()
   generatedAt!: Date;

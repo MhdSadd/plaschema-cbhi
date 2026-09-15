@@ -105,6 +105,12 @@ export class DashboardKpisDto {
   @ApiProperty({ type: KpiPercentChangeDto })
   newEnrollments!: KpiPercentChangeDto;
 
+  @ApiProperty({ type: KpiPercentChangeDto })
+  totalHouseholds!: KpiPercentChangeDto;
+
+  @ApiProperty({ type: KpiPercentChangeDto })
+  newHouseholds!: KpiPercentChangeDto;
+
   @ApiProperty({ type: KpiAbsoluteChangeDto })
   totalFacilities!: KpiAbsoluteChangeDto;
 
@@ -213,6 +219,22 @@ export class DashboardLgaEnrollmentDto {
   lga!: string;
 
   @ApiProperty({ example: 534 })
+  count!: number;
+}
+
+export class DashboardHouseholdOverviewDto {
+  @ApiProperty({ example: 4120 })
+  totalMembers!: number;
+
+  @ApiProperty({ example: 3.8 })
+  averageMembersPerHousehold!: number;
+}
+
+export class DashboardHouseholdSizeSliceDto {
+  @ApiProperty({ example: '2–3 members' })
+  label!: string;
+
+  @ApiProperty({ example: 120 })
   count!: number;
 }
 
@@ -327,6 +349,29 @@ export class DashboardResponseDto {
 
   @ApiProperty({ type: DashboardEnrollmentTrendDto })
   enrollmentTrend!: DashboardEnrollmentTrendDto;
+
+  @ApiProperty({ type: DashboardHouseholdOverviewDto })
+  householdOverview!: DashboardHouseholdOverviewDto;
+
+  @ApiProperty({ type: DashboardEnrollmentTrendDto })
+  householdTrend!: DashboardEnrollmentTrendDto;
+
+  @ApiProperty({
+    type: DashboardWardEnrollmentDto,
+    isArray: true,
+    description: 'Top 10 wards by period household registrations',
+  })
+  householdByWard!: DashboardWardEnrollmentDto[];
+
+  @ApiProperty({
+    type: DashboardLgaEnrollmentDto,
+    isArray: true,
+    description: 'All LGAs with period household registrations, descending',
+  })
+  householdByLga!: DashboardLgaEnrollmentDto[];
+
+  @ApiProperty({ type: DashboardHouseholdSizeSliceDto, isArray: true })
+  householdSizeBreakdown!: DashboardHouseholdSizeSliceDto[];
 
   @ApiProperty({
     type: DashboardActivityItemDto,

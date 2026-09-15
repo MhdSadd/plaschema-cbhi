@@ -40,8 +40,10 @@ export const envSchema = z.object({
     .int()
     .positive()
     .default(1800),
-  /** Default capitation rate per active beneficiary (NGN). */
+  /** Deprecated: legacy flat rate per active beneficiary (NGN). Unused by tier-based capitation. */
   CAPITATION_RATE: z.coerce.number().int().positive().default(700),
+  /** Optional JSON array of capitation tiers used when preview/generate requests omit tiers. */
+  CAPITATION_TIERS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

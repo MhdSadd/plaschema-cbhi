@@ -9,9 +9,15 @@ import type {
   CapitationRecordDraft,
   CapitationRecordListItem,
   CapitationRunSummary,
+  CapitationTier,
   HealthFacilityCapitationDetail,
 } from '../domain/capitation';
-import { sortCapitationListRecords } from '../domain/capitation';
+import {
+  formatCapitationTierLabel,
+  resolveCapitationAmount,
+  resolveCapitationTier,
+  sortCapitationListRecords,
+} from '../domain/capitation';
 import type {
   CapitationRepository,
   CreateCapitationRunInput,
@@ -21,9 +27,6 @@ import type {
 
 function summarizeRecords(
   records: CapitationRecordDraft[],
-  month: number,
-  year: number,
-  rate: number,
 ): Pick<
   CapitationPreviewResult,
   'totalFacilities' | 'totalBeneficiaries' | 'totalCapitation'
@@ -35,11 +38,41 @@ function summarizeRecords(
   };
 }
 
+function parseRunTiers(value: unknown): CapitationTier[] | null {
+  if (!value || !Array.isArray(value)) {
+    return null;
+  }
+
+  return value as CapitationTier[];
+}
+
+function mapRecordDraft(
+  facility: { id: string; name: string; lga: string },
+  beneficiaryCount: number,
+  tiers: CapitationTier[],
+): CapitationRecordDraft {
+  const tier = resolveCapitationTier(beneficiaryCount, tiers);
+  const amount = resolveCapitationAmount(beneficiaryCount, tiers);
+
+  return {
+    healthFacilityId: facility.id,
+    facilityName: facility.name,
+    lga: facility.lga,
+    beneficiaryCount,
+    amount,
+    tierMin: tier?.minEnrollees ?? null,
+    tierMax: tier?.maxEnrollees ?? null,
+    tierAmount: tier?.amount ?? null,
+    tierLabel: tier ? formatCapitationTierLabel(tier) : null,
+    rate: null,
+  };
+}
+
 @Injectable()
 export class PrismaCapitationRepository implements CapitationRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async computeRecords(rate: number): Promise<CapitationRecordDraft[]> {
+  async computeRecords(tiers: CapitationTier[]): Promise<CapitationRecordDraft[]> {
     const [facilities, enrollmentCounts] = await Promise.all([
       this.prisma.healthFacility.findMany({
         where: { status: 'active' },
@@ -66,28 +99,21 @@ export class PrismaCapitationRepository implements CapitationRepository {
 
     return facilities.map((facility) => {
       const beneficiaryCount = countByFacility.get(facility.id) ?? 0;
-      return {
-        healthFacilityId: facility.id,
-        facilityName: facility.name,
-        lga: facility.lga,
-        beneficiaryCount,
-        rate,
-        amount: beneficiaryCount * rate,
-      };
+      return mapRecordDraft(facility, beneficiaryCount, tiers);
     });
   }
 
   async preview(
     month: number,
     year: number,
-    rate: number,
+    tiers: CapitationTier[],
   ): Promise<CapitationPreviewResult> {
-    const records = await this.computeRecords(rate);
+    const records = await this.computeRecords(tiers);
     return {
       month,
       year,
-      rate,
-      ...summarizeRecords(records, month, year, rate),
+      tiers,
+      ...summarizeRecords(records),
       records,
     };
   }
@@ -103,7 +129,7 @@ export class PrismaCapitationRepository implements CapitationRepository {
           id: runId,
           month: input.month,
           year: input.year,
-          rate: input.rate,
+          tiers: input.tiers,
           createdByUserId: input.createdByUserId,
         },
       });
@@ -117,7 +143,10 @@ export class PrismaCapitationRepository implements CapitationRepository {
             facilityName: record.facilityName,
             lga: record.lga,
             beneficiaryCount: record.beneficiaryCount,
-            rate: record.rate,
+            tierMin: record.tierMin,
+            tierMax: record.tierMax,
+            tierAmount: record.tierAmount,
+            tierLabel: record.tierLabel,
             amount: record.amount,
           })),
         });
@@ -126,18 +155,14 @@ export class PrismaCapitationRepository implements CapitationRepository {
       return created;
     });
 
-    const totals = summarizeRecords(
-      input.records,
-      input.month,
-      input.year,
-      input.rate,
-    );
+    const totals = summarizeRecords(input.records);
 
     return {
       runId: run.id,
       month: run.month,
       year: run.year,
-      rate: run.rate,
+      tiers: input.tiers,
+      rate: null,
       generatedAt: run.createdAt,
       ...totals,
       recordCount: input.records.length,
@@ -156,16 +181,18 @@ export class PrismaCapitationRepository implements CapitationRepository {
       id: string;
       month: number;
       year: number;
-      rate: number;
+      rate: number | null;
+      tiers: unknown;
       createdAt: Date;
     },
     records: CapitationRecordDraft[],
   ): CapitationRunSummary {
-    const totals = summarizeRecords(records, run.month, run.year, run.rate);
+    const totals = summarizeRecords(records);
     return {
       runId: run.id,
       month: run.month,
       year: run.year,
+      tiers: parseRunTiers(run.tiers),
       rate: run.rate,
       generatedAt: run.createdAt,
       ...totals,
@@ -199,8 +226,12 @@ export class PrismaCapitationRepository implements CapitationRepository {
         facilityName: row.facilityName,
         lga: row.lga,
         beneficiaryCount: row.beneficiaryCount,
-        rate: row.rate,
         amount: row.amount,
+        tierMin: row.tierMin,
+        tierMax: row.tierMax,
+        tierAmount: row.tierAmount,
+        tierLabel: row.tierLabel,
+        rate: row.rate,
       })),
     );
 
@@ -237,12 +268,13 @@ export class PrismaCapitationRepository implements CapitationRepository {
         facilityName: row.facilityName,
         lga: row.lga,
         beneficiaryCount: row.beneficiaryCount,
-        rate: row.rate,
         amount: row.amount,
+        tierMin: row.tierMin,
+        tierMax: row.tierMax,
+        tierAmount: row.tierAmount,
+        tierLabel: row.tierLabel,
+        rate: row.rate,
       })),
-      latestRun.month,
-      latestRun.year,
-      latestRun.rate,
     );
 
     let startIndex = 0;
@@ -264,8 +296,12 @@ export class PrismaCapitationRepository implements CapitationRepository {
       year: latestRun.year,
       period: formatCapitationPeriod(latestRun.month, latestRun.year),
       beneficiaryCount: row.beneficiaryCount,
-      rate: row.rate,
       amount: row.amount,
+      tierMin: row.tierMin,
+      tierMax: row.tierMax,
+      tierAmount: row.tierAmount,
+      tierLabel: row.tierLabel,
+      rate: row.rate,
     }));
 
     return {
@@ -331,8 +367,12 @@ export class PrismaCapitationRepository implements CapitationRepository {
         year: record.run.year,
         period: formatCapitationPeriod(record.run.month, record.run.year),
         beneficiaryCount: record.beneficiaryCount,
-        rate: record.rate,
         amount: record.amount,
+        tierMin: record.tierMin,
+        tierMax: record.tierMax,
+        tierAmount: record.tierAmount,
+        tierLabel: record.tierLabel,
+        rate: record.rate,
         generatedAt: record.run.createdAt,
       });
     }
