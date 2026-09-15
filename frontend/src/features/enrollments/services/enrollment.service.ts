@@ -1,8 +1,9 @@
-import { _get, _patch, _post, type ApiResponse, type CursorPaginationMeta } from '@/api'
+import { _delete, _get, _patch, _post, type ApiResponse, type CursorPaginationMeta } from '@/api'
 
 import type {
   BulkEnrollmentStatusPayload,
   CreateFileJobResult,
+  DeleteFileJobResult,
   EnrollmentDetail,
   EnrollmentDetailApi,
   EnrollmentListItem,
@@ -110,5 +111,10 @@ export async function fetchFileJob(id: string): Promise<FileJob> {
 
 export async function fetchFileJobDownload(id: string): Promise<FileJobDownload> {
   const response = await _get<ApiResponse<FileJobDownload>>(`/file-jobs/${id}/download`)
+  return response.data.data
+}
+
+export async function deleteFileJob(id: string): Promise<DeleteFileJobResult> {
+  const response = await _delete<ApiResponse<DeleteFileJobResult>>(`/file-jobs/${id}`)
   return response.data.data
 }

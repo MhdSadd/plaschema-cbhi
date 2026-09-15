@@ -250,3 +250,8 @@ export interface FileJobDownload {
   filename: string
   format: FileJobFormat
 }
+
+export interface DeleteFileJobResult {
+  id: string
+  deleted: true
+}

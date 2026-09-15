@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { FILE_JOB_REPOSITORY } from './application/file-job.repository';
 import { CreateFileJobUseCase } from './application/create-file-job.use-case';
+import { DeleteFileJobUseCase } from './application/delete-file-job.use-case';
 import { GetFileJobDownloadUrlUseCase } from './application/get-file-job-download-url.use-case';
 import {
   GetFileJobUseCase,
@@ -28,6 +29,7 @@ import { FileJobController } from './presentation/file-job.controller';
     ListFileJobsUseCase,
     GetFileJobUseCase,
     GetFileJobDownloadUrlUseCase,
+    DeleteFileJobUseCase,
   ],
   exports: [
     CreateFileJobUseCase,

@@ -16,6 +16,7 @@ describe('PassportPrintService', () => {
       exists: jest.fn().mockResolvedValue(false),
       putObject: jest.fn().mockResolvedValue(undefined),
       getObject: jest.fn(),
+      deleteObject: jest.fn().mockResolvedValue(undefined),
       ...overrides?.storage,
     };
 

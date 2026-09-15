@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import {
+  deleteFileJob,
   exportEnrollments,
   fetchFileJob,
   fetchFileJobDownload,
@@ -54,4 +55,15 @@ export function useFileJob(id: string | null) {
 
 export function useFileJobDownload() {
   return useMutation({ mutationFn: fetchFileJobDownload })
+}
+
+export function useDeleteFileJob() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: deleteFileJob,
+    onSuccess: (_result, id) => {
+      void queryClient.invalidateQueries({ queryKey: ['file-jobs'] })
+      queryClient.removeQueries({ queryKey: enrollmentKeys.job(id) })
+    },
+  })
 }

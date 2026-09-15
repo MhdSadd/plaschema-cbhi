@@ -108,6 +108,14 @@ export class ListFileJobsResponseDto {
 
 export class FileJobDetailDto extends FileJobListItemDto {}
 
+export class DeleteFileJobResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  id!: string;
+
+  @ApiProperty({ example: true })
+  deleted!: true;
+}
+
 export class FileJobDownloadResponseDto {
   @ApiProperty({ format: 'uuid' })
   jobId!: string;

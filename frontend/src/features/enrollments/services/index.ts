@@ -1,4 +1,5 @@
 export {
+  deleteFileJob,
   exportEnrollments,
   fetchEnrollmentDetail,
   fetchEnrollments,

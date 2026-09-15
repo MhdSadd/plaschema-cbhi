@@ -46,4 +46,5 @@ export interface ObjectStorage {
   exists(objectKey: string): Promise<boolean>;
   putObject(input: PutObjectInput): Promise<void>;
   getObject(objectKey: string): Promise<GetObjectResult>;
+  deleteObject(objectKey: string): Promise<void>;
 }

@@ -1,7 +1,8 @@
 import {
+  DeleteObjectCommand,
+  GetObjectCommand,
   HeadObjectCommand,
   PutObjectCommand,
-  GetObjectCommand,
   S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
@@ -132,6 +133,23 @@ export class RailwayObjectStorage implements ObjectStorage {
         ContentType: input.contentType,
       }),
     );
+  }
+
+  async deleteObject(objectKey: string): Promise<void> {
+    const key = this.assertSafeObjectKey(objectKey);
+    try {
+      await this.client.send(
+        new DeleteObjectCommand({
+          Bucket: this.config.objectStorageBucketName,
+          Key: key,
+        }),
+      );
+    } catch (error: unknown) {
+      if (this.isNotFound(error)) {
+        return;
+      }
+      throw error;
+    }
   }
 
   async getObject(objectKey: string): Promise<{

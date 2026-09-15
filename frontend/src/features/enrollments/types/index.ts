@@ -1,6 +1,7 @@
 export type {
   BulkEnrollmentStatusPayload,
   CreateFileJobResult,
+  DeleteFileJobResult,
   EnrollmentActivity,
   EnrollmentDetail,
   EnrollmentDetailApi,
