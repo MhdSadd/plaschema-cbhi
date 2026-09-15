@@ -23,12 +23,12 @@ interface AdminSidebarProps {
 
 const mainItems = [
   { path: '/admin', label: 'Dashboard', icon: Home, end: true },
-  { path: '/admin/wards', label: 'Wards', icon: MapPin },
   { path: '/admin/beneficiaries', label: 'CBHI Enrolments', icon: Users },
   { path: '/admin/id-cards', label: 'ID Cards', icon: CreditCard },
 ]
 
 const administrationItems = [
+  { path: '/admin/wards', label: 'Wards', icon: MapPin },
   { path: '/admin/field-workers', label: 'Enrollment Officers', icon: HeartPulse },
   { path: '/admin/facilities', label: 'Facilities', icon: Building2 },
   { path: '/admin/capitation', label: 'Capitation', icon: CreditCard },

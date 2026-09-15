@@ -67,7 +67,7 @@ describe('GetHealthFacilityDetailUseCase', () => {
 
     const capitationDetail = {
       implemented: true as const,
-      currentAmount: 1400,
+      currentAmount: 650_000,
       currency: 'NGN' as const,
       records: [
         {
@@ -75,8 +75,12 @@ describe('GetHealthFacilityDetailUseCase', () => {
           year: 2026,
           period: 'August 2026',
           beneficiaryCount: 2,
-          rate: 700,
-          amount: 1400,
+          amount: 650_000,
+          tierMin: 1,
+          tierMax: 4999,
+          tierAmount: 650_000,
+          tierLabel: '1 – 4,999',
+          rate: null,
           generatedAt: new Date('2026-08-29T12:00:00.000Z'),
         },
       ],

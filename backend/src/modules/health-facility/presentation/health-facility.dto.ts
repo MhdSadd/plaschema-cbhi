@@ -317,10 +317,22 @@ export class HealthFacilityCapitationHistoryItemDto {
   beneficiaryCount!: number;
 
   @ApiProperty()
-  rate!: number;
-
-  @ApiProperty()
   amount!: number;
+
+  @ApiProperty({ nullable: true })
+  tierMin!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierMax!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierAmount!: number | null;
+
+  @ApiProperty({ nullable: true })
+  tierLabel!: string | null;
+
+  @ApiProperty({ nullable: true, description: 'Legacy flat rate per beneficiary' })
+  rate!: number | null;
 
   @ApiProperty()
   generatedAt!: Date;

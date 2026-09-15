@@ -84,8 +84,12 @@ export interface HealthFacilityCapitationRecordApi {
   year: number
   period: string
   beneficiaryCount: number
-  rate: number
   amount: number
+  tierMin: number | null
+  tierMax: number | null
+  tierAmount: number | null
+  tierLabel: string | null
+  rate: number | null
   generatedAt: string
 }
 
@@ -94,8 +98,12 @@ export interface HealthFacilityCapitationRecord {
   year: number
   period: string
   beneficiaryCount: number
-  rate: number
   amount: number
+  tierMin: number | null
+  tierMax: number | null
+  tierAmount: number | null
+  tierLabel: string | null
+  rate: number | null
   generatedAt: string
 }
 

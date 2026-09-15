@@ -7,6 +7,7 @@ import type {
   CapitationPreview,
   CapitationRecord,
   CapitationSummary,
+  CapitationTier,
   GenerateCapitationPayload,
   GenerateCapitationResult,
 } from '../types'
@@ -40,10 +41,15 @@ export async function fetchCapitations(
 export async function fetchCapitationPreview(
   month: number,
   year: number,
+  tiers: CapitationTier[],
 ): Promise<CapitationPreview> {
   const response = await _get<ApiResponse<CapitationPreview>>(
     '/capitations/preview',
-    { month, year },
+    {
+      month,
+      year,
+      tiers: JSON.stringify(tiers),
+    },
   )
   return response.data.data
 }

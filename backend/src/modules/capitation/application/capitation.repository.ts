@@ -4,6 +4,7 @@ import type {
   CapitationRecordDraft,
   CapitationRecordListItem,
   CapitationRunSummary,
+  CapitationTier,
   HealthFacilityCapitationDetail,
 } from '../domain/capitation';
 
@@ -34,7 +35,7 @@ export type PaginatedCapitations = {
 export type CreateCapitationRunInput = {
   month: number;
   year: number;
-  rate: number;
+  tiers: CapitationTier[];
   createdByUserId: string;
   records: CapitationRecordDraft[];
 };
@@ -42,8 +43,12 @@ export type CreateCapitationRunInput = {
 export const CAPITATION_REPOSITORY = Symbol('CAPITATION_REPOSITORY');
 
 export interface CapitationRepository {
-  computeRecords(rate: number): Promise<CapitationRecordDraft[]>;
-  preview(month: number, year: number, rate: number): Promise<CapitationPreviewResult>;
+  computeRecords(tiers: CapitationTier[]): Promise<CapitationRecordDraft[]>;
+  preview(
+    month: number,
+    year: number,
+    tiers: CapitationTier[],
+  ): Promise<CapitationPreviewResult>;
   createRun(input: CreateCapitationRunInput): Promise<CapitationGenerateResult>;
   list(query: ListCapitationsQuery): Promise<PaginatedCapitations>;
   findFacilityCapitation(

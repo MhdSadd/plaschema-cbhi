@@ -1,6 +1,6 @@
 # PLASCHEMA Project Handoff
 
-Last updated: 13 September 2026 (beneficiary category list expanded to seven programme categories)
+Last updated: 15 September 2026 (tier-based capitation bands with admin-adjustable ranges)
 Last verified code commit: `177f909`
 
 ## Purpose
@@ -29,7 +29,7 @@ This is a pnpm workspace. The root scripts manage all three apps.
 - The admin top bar shows the current feature name from route metadata; unsupported global search and notification controls were removed. Detail routes identify their parent feature in the same metadata.
 - Enabled buttons, links, selects and other interactive controls use a pointer cursor across the admin app, while disabled controls use the not-allowed cursor.
 - The protected admin layout owns page-level vertical scrolling. Feature views do not create competing page scroll containers; tables, tabs, dropdowns and dialogs retain their intentional bounded scrolling.
-- The admin dashboard uses `GET /api/dashboard` for its KPIs, enrollment trend, recent activity, category/status breakdowns, ward/LGA rankings, facility overview, field-worker performance and recent enrollments.
+- The admin dashboard uses `GET /api/dashboard` for its KPIs, enrollment trend, recent activity, category/status breakdowns, ward/LGA rankings, household analytics (total/new households, registration trend, ward/LGA distribution, household size breakdown), facility overview, field-worker performance and recent enrollments.
 - Dashboard filters are LGA, a searchable Ward, period (`7d`|`30d`|`3m`|`6m`|`1y`, default `30d`) and trend (`daily`|`weekly`|`monthly`, default `monthly`). Plateau is fixed rather than exposed as a State filter; selecting an LGA clears an incompatible Ward and selecting a Ward applies its LGA.
 - Every dashboard visual is rendered with Recharts: the enrollment trend is a gradient area chart with a stroked line, per-point dots, a labelled y-axis, a hover tooltip and a dashed average reference line; enrollment by category, ward and LGA share one horizontal bar chart; enrollment by status is a donut with a legend and a centre total. No hand-rolled SVG or CSS-div bars remain in the dashboard feature.
 - Ward bars on the dashboard still navigate to ward detail. Because a Recharts bar click is mouse-only, each clickable chart also renders a visually hidden list of real buttons so keyboard and screen-reader users keep the same navigation.
@@ -65,10 +65,12 @@ This is a pnpm workspace. The root scripts manage all three apps.
 - Field-worker list KPI cards use filter-scoped `meta.total` and `summary` (`active`, `totalBeneficiariesEnrolled`) rather than calculating the current page.
 - Capitation records use `GET /capitations` with the selected month/year, debounced server search, LGA filtering and cursor-based Previous/Next navigation.
 - Capitation month and year controls share the responsive filter row with search and LGA rather than occupying a separate period panel.
-- Capitation preview and generation use `GET /capitations/preview` and `POST /capitations/generate`. The admin selects a period, reviews the server calculation, confirms generation and sees the real result.
-- The backend-configured capitation rate is authoritative; the admin UI does not submit a rate override. Generating a newer run for an existing period requires confirmation.
+- Capitation preview and generation use `GET /capitations/preview` and `POST /capitations/generate`. The admin selects a period, editable enrollee bands (min/max + flat monthly amount), reviews the server calculation, confirms generation and sees the real result.
+- Capitation uses tier-based flat monthly amounts per facility (not per-enrollee multiplication). Default bands: 1–4,999 → N650,000; 5,000–10,000 → N830,000; 10,001+ → N1,000,000. Facilities with zero active enrollees receive N0.
+- Preview/generate accept optional `tiers`; when omitted the backend uses `CAPITATION_TIERS` env JSON or built-in defaults. Each run snapshots the tiers used. Legacy flat-rate runs remain readable via nullable `rate` fields.
+- Generating a newer run for an existing period requires confirmation.
 - Payment statuses, marking payments, scoped generation, printing, exports, exceptions and breakdown actions were removed because production does not expose those contracts.
-- Capitation list cards use filter-scoped `filteredSummary`; the rate and latest-generation date continue to use the run-wide `summary`.
+- Capitation list cards use filter-scoped `filteredSummary`; capitation bands and latest-generation date continue to use the run-wide `summary`.
 - Admin CBHI Enrolments now uses `GET /enrollments` with cursor pagination and production search, status, category, printed-state, LGA, ward, facility, field-worker, date and age filters.
 - CBHI Enrolments also exposes a **Households** tab on the same page. It lists households from `GET /households` (family head, household ID/code, LGA, household size, ward) and opens `/admin/beneficiaries/households/:id` for the API-backed household detail view (`GET /households/:id`).
 - Enrollment detail combines `GET /enrollments/:id` with `GET /enrollments/:id/detail` to show the complete beneficiary record, temporary document links and real activity history.
@@ -215,7 +217,7 @@ Both frontend development servers use Vite's `--strictPort` option and exit inst
 - Keep PWA enrollment API traffic in typed services. Components consume hooks; direct `fetch` is limited to the NDJSON and presigned-upload transport helpers.
 - Remove accepted local enrollment records and their file blobs after the final `/auth/sync` report succeeds; server history remains in the admin app.
 - Refresh offline reference streams when absent, more than 24 hours old or ward access changes; do not download both streams on every queue polling interval.
-- Keep the capitation rate owned by backend configuration. The admin may select the period and preview the calculation but does not override the rate.
+- Capitation bands default from backend configuration (`CAPITATION_TIERS` or built-in defaults). The admin may adjust bands when generating a run; preview and generate must use the same tier payload.
 - Allow repeated capitation generation for a period with a warning; the newest run is the one displayed by the backend.
 - Keep admin enrollment creation in the PWA workflow; the admin app reviews, filters, prints and exports server records.
 - Keep enrollment selection across result pages up to 100 records for status changes. The same selection may generate ID cards only while it contains one to nine records.

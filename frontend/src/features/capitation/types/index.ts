@@ -6,6 +6,7 @@ export type {
   CapitationPreview,
   CapitationPreviewRecord,
   CapitationRecord,
+  CapitationTier,
   CapitationSummary,
   GenerateCapitationPayload,
   GenerateCapitationResult,

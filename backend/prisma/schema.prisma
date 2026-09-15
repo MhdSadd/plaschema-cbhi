@@ -235,7 +235,8 @@ model CapitationRun {
   id              String   @id @db.Uuid
   month           Int
   year            Int
-  rate            Int
+  rate            Int?
+  tiers           Json?
   createdAt       DateTime @default(now())
   createdByUserId String   @db.Uuid
 
@@ -246,13 +247,17 @@ model CapitationRun {
 }
 
 model CapitationRecord {
-  id               String @id @db.Uuid
-  runId            String @db.Uuid
-  healthFacilityId String @db.Uuid
+  id               String  @id @db.Uuid
+  runId            String  @db.Uuid
+  healthFacilityId String  @db.Uuid
   facilityName     String
   lga              String
   beneficiaryCount Int
-  rate             Int
+  rate             Int?
+  tierMin          Int?
+  tierMax          Int?
+  tierAmount       Int?
+  tierLabel        String?
   amount           Int
 
   run            CapitationRun    @relation(fields: [runId], references: [id], onDelete: Cascade)

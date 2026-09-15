@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import {
+  DEFAULT_CAPITATION_TIERS,
+  type CapitationTier,
+  validateCapitationTiers,
+} from '../../modules/capitation/domain/capitation';
 import { Env } from './env.schema';
 
 @Injectable()
@@ -88,5 +93,24 @@ export class AppConfigService {
 
   get capitationRate(): number {
     return this.configService.get('CAPITATION_RATE', { infer: true });
+  }
+
+  get defaultCapitationTiers(): CapitationTier[] {
+    const raw = this.configService.get('CAPITATION_TIERS', { infer: true });
+    if (!raw) {
+      return DEFAULT_CAPITATION_TIERS;
+    }
+
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) {
+        throw new Error('CAPITATION_TIERS must be a JSON array');
+      }
+      return validateCapitationTiers(parsed as CapitationTier[]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : 'Invalid CAPITATION_TIERS JSON';
+      throw new Error(`Invalid CAPITATION_TIERS configuration: ${message}`);
+    }
   }
 }

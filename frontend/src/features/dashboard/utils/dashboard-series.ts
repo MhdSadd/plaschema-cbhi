@@ -47,6 +47,10 @@ export function toLgaSeries(items: Array<{ lga: string; count: number }>): Enrol
   return items.map((item) => ({ id: item.lga, label: item.lga, count: safeCount(item.count) }))
 }
 
+export function toLabelSeries(items: Array<{ label: string; count: number }>): EnrollmentBarItem[] {
+  return items.map((item) => ({ id: item.label, label: item.label, count: safeCount(item.count) }))
+}
+
 export function toStatusSeries(breakdown: DashboardStatusBreakdown): StatusDatum[] {
   return [
     { name: 'Active', count: safeCount(breakdown.active.count), percent: safePercent(breakdown.active.percent) },
