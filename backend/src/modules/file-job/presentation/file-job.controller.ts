@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Delete, Get, Param, Query } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiConflictResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -13,12 +14,14 @@ import {
 import { Roles } from '../../../platform/auth/roles.decorator';
 import { AppError } from '../../../platform/http/app-error';
 import { UuidV7Pipe } from '../../../platform/http/uuid-v7.pipe';
+import { DeleteFileJobUseCase } from '../application/delete-file-job.use-case';
 import { GetFileJobDownloadUrlUseCase } from '../application/get-file-job-download-url.use-case';
 import {
   GetFileJobUseCase,
   ListFileJobsUseCase,
 } from '../application/list-file-jobs.use-case';
 import {
+  DeleteFileJobResponseDto,
   FileJobDetailDto,
   FileJobDownloadResponseDto,
   ListFileJobsQueryDto,
@@ -33,6 +36,7 @@ export class FileJobController {
     private readonly listFileJobs: ListFileJobsUseCase,
     private readonly getFileJob: GetFileJobUseCase,
     private readonly getFileJobDownloadUrl: GetFileJobDownloadUrlUseCase,
+    private readonly deleteFileJob: DeleteFileJobUseCase,
   ) {}
 
   @Get()
@@ -69,6 +73,24 @@ export class FileJobController {
     @Param('id', UuidV7Pipe) id: string,
   ) {
     return this.getFileJobDownloadUrl.execute(user, id);
+  }
+
+  @Delete(':id')
+  @Roles('admin')
+  @ApiOperation({
+    summary:
+      'Permanently delete a completed or failed file job and its stored object',
+  })
+  @ApiOkResponse({ type: DeleteFileJobResponseDto })
+  @ApiNotFoundResponse()
+  @ApiConflictResponse({
+    description: 'Job is still queued or processing',
+  })
+  async remove(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id', UuidV7Pipe) id: string,
+  ) {
+    return this.deleteFileJob.execute(user, id);
   }
 
   @Get(':id')

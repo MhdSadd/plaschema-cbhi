@@ -99,6 +99,7 @@ Clean Architecture only (no DDD / bounded contexts). Feature modules:
 - `GET /api/file-jobs` — list file generation jobs for the current user (ID cards + enrollment reports). Active jobs (`queued`/`processing`) first, then newest. Optional `status` filter; cursor pagination
 - `GET /api/file-jobs/:id` — file job detail (current user only)
 - `GET /api/file-jobs/:id/download` — fresh presigned download URL for a completed job (current user only)
+- `DELETE /api/file-jobs/:id` — permanently delete a completed or failed job and its stored PDF/XLSX (current user only)
 
 Roles: `admin` | `field_worker`. Field workers with assigned wards are scoped to those wards; with no assignments they can enroll and view enrollments in all wards.
 

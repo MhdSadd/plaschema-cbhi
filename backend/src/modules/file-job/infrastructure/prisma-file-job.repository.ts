@@ -263,4 +263,14 @@ export class PrismaFileJobRepository implements FileJobRepository {
 
     return this.map(row);
   }
+
+  async deleteForUser(
+    id: string,
+    requestedByUserId: string,
+  ): Promise<boolean> {
+    const result = await this.prisma.fileJob.deleteMany({
+      where: { id, requestedByUserId },
+    });
+    return result.count > 0;
+  }
 }

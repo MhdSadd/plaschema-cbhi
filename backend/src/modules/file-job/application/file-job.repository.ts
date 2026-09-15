@@ -44,4 +44,5 @@ export interface FileJobRepository {
     input: { objectKey: string; metadata?: FileJobMetadata },
   ): Promise<FileJob | null>;
   markFailed(id: string, error: string): Promise<FileJob | null>;
+  deleteForUser(id: string, requestedByUserId: string): Promise<boolean>;
 }
