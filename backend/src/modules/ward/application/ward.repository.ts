@@ -39,6 +39,7 @@ export interface WardRepository {
   findById(id: string): Promise<Ward | null>;
   findByCode(code: string): Promise<Ward | null>;
   findByName(name: string): Promise<Ward | null>;
+  findOneByLga(lga: string): Promise<Ward | null>;
   findByNames(names: string[]): Promise<Ward[]>;
   findByCodes(codes: string[]): Promise<Ward[]>;
   listCodes(): Promise<string[]>;

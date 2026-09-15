@@ -1,7 +1,10 @@
 import {
   allocateUniqueWardCode,
   deriveWardCodeBase,
+  deriveWardCodeBaseFromLgaPrefix,
+  extractLgaPrefixFromWardCode,
   extractWardCodePrefix,
+  normalizeWardCode,
 } from './ward-code';
 
 describe('ward code derivation', () => {
@@ -14,6 +17,19 @@ describe('ward code derivation', () => {
   it('derives `<LGA_3>-<NAME_3>` codes', () => {
     expect(deriveWardCodeBase('Jos South', 'Vom Central')).toBe('JOS-VOM');
     expect(deriveWardCodeBase('Barkin Ladi', 'Gashish')).toBe('BAR-GAS');
+  });
+
+  it('derives codes from a known LGA prefix', () => {
+    expect(deriveWardCodeBaseFromLgaPrefix('JOS', 'Vom Central')).toBe('JOS-VOM');
+  });
+
+  it('extracts the LGA prefix from an existing ward code', () => {
+    expect(extractLgaPrefixFromWardCode('JOS-VOM')).toBe('JOS');
+    expect(extractLgaPrefixFromWardCode('JOS-VOM-2')).toBe('JOS');
+  });
+
+  it('normalizes uploaded ward codes', () => {
+    expect(normalizeWardCode(' jos-vom ')).toBe('JOS-VOM');
   });
 
   it('allocates numeric suffixes when the base code is taken', () => {
