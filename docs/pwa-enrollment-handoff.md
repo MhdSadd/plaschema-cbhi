@@ -293,15 +293,22 @@ Duplicate detection: same first name + last name + date of birth → `409 DUPLIC
 
 ---
 
-## 11. Accessing the PWA offline (after online login)
+## 11. Accessing the PWA offline
 
-The PWA is installable and works offline **only after at least one successful online login**.
+Installation and offline capability are separate. A normal browser visit can
+install and activate the service worker and cache the app shell, so the PWA can
+later reopen offline in a browser tab even if the worker never added it to the
+home screen. The first visit must be online so the browser can cache the shell.
+
+Authenticated field work has an additional preparation requirement: the worker
+must have completed at least one successful online login, the saved JWT must not
+have expired, and the required ward/facility data must have been downloaded.
 
 ### What “offline access” means here
 
 | Works offline | Does not work offline |
 | --- | --- |
-| Open installed app / cached shell | Login (first time or after expiry) |
+| Open installed app or previously prepared browser-tab shell | Login (first time or after expiry) |
 | Navigate between app screens | Upload files or create enrollments on server |
 | View saved session profile | `GET /auth/me` validation |
 | Enroll using local drafts (once storage is built) | Download ward/facility streams |
@@ -324,14 +331,14 @@ The PWA is installable and works offline **only after at least one successful on
 4. **Expiry**:
    - When JWT expires, session is cleared — user must log in online again.
 
-5. **Install on phone**:
+5. **Optional installation on phone**:
    - Browser menu → “Add to Home Screen” / “Install app”.
    - Opens in standalone mode like a native app.
 
 ### Recommended first-time worker flow
 
 ```text
-Online:  Install PWA → Login → (optional) cache wards/facilities streams
+Online:  Visit PWA → Login → cache wards/facilities streams → optionally install
 Offline: Open app → Enroll beneficiaries → save locally as Pending
 Online:  Open Sync → upload each pending record → POST /auth/sync
 ```
