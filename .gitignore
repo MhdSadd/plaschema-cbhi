@@ -11,3 +11,5 @@ backend/src/generated/
 backend/uploads/
 uploads/
 designs
+pwa-engineering-playbook/
+codex-session-*.md

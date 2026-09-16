@@ -176,6 +176,20 @@ Both frontend development servers use Vite's `--strictPort` option and exit inst
 - The initial sites were uploaded manually with the Netlify CLI. Connect both Netlify sites to this repository for continuous deployment, using the package directories above.
 - Set a production `VITE_API_URL` separately for both Netlify sites and rebuild after changing it. Do not commit deployed environment values.
 
+### Deploy contexts
+
+- `main` is the production branch for both sites and is served on the production custom domain.
+- `staging` is deployed as a Netlify branch deploy on the same two sites. Enable it under Build & deploy, Branches and deploy contexts, Branch deploys, by adding `staging` as an individual branch. Do not create separate Netlify sites for it.
+- Staging admin URL: `https://staging--plaschema-admin.netlify.app`.
+- Staging field-worker PWA URL: `https://staging--plaschema-pwa.netlify.app`.
+- `VITE_API_URL` is set per deploy context in the Netlify environment variable editor on both sites, with one value for production and a separate value for the `staging` branch deploy. Keep both values out of the repository, including out of `netlify.toml`.
+- The staging origins above must be listed in the staging API's `CORS_ORIGIN`, which is parsed as a comma-separated list, and in the object-storage CORS rules used by PWA uploads.
+- The `ignore` command in each `netlify.toml` is evaluated per deploy context, so a staging deploy reported as skipped simply means the commit touched neither that app's directory nor the workspace manifests. Use a cleared-cache deploy on the `staging` branch to force a build.
+
+### Branch flow
+
+- `feat/*` and `fix/*` branches merge into `staging`, which is verified on the staging deploys, and `staging` is then merged into `main` for release.
+
 ## Railway / ID-card Chromium
 
 - Backend ID-card PDFs need Puppeteer's Chrome binary on the Railway image.
