@@ -179,7 +179,7 @@ export function AdminLoginView() {
             </form>
           )}
 
-          {/* ── FORGOT PASSWORD ── */}
+          {/* ── FORGOT PASSWORD SECTION ── */}
           {screen === "forgot" && (
             <>
               <button onClick={() => setScreen("login")} className="flex items-center gap-1.5 text-muted-foreground text-sm font-medium hover:text-foreground mb-5 transition-colors">

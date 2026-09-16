@@ -1,0 +1,14 @@
+{
+  "name": "Production PWA Engineering Playbook",
+  "short_name": "PWA Playbook",
+  "description": "A detailed, plain-language guide to production progressive web applications.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f7f2",
+  "theme_color": "#173f32",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
