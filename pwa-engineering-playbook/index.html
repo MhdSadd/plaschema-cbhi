@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#173f32">
+  <meta name="description" content="A detailed, plain-language engineering playbook for production progressive web applications.">
+  <title>Production PWA Engineering Playbook</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="assets/icon-192.png">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script type="module" src="assets/site.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html"><span class="brand-mark">PWA</span><span>Engineering Playbook</span></a>
+      <nav class="site-nav" aria-label="Main navigation">
+        <a href="#paths">Paths</a><a href="#lessons">Lessons</a><a href="reference/decision-checklists.html">Checklists</a><a href="reference/glossary.html">Glossary</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell" id="main">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Production PWA engineering · verified 10 September 2026</p>
+        <h1>Build web apps that keep their promises offline.</h1>
+        <p class="lede">A practical and detailed guide to app shells, local databases, safe updates, durable sync, files, authentication, security, testing, and operations.</p>
+        <div class="button-row"><a class="button" href="lessons/01-mental-model.html">Start the course</a><a class="button secondary" href="reference/decision-checklists.html">Plan a PWA</a></div>
+      </div>
+      <aside class="hero-note">
+        <span class="kicker">The central idea</span>
+        <strong>Installation is optional. Preparation is not.</strong>
+        <p>A service worker can cache a web app during an ordinary browser visit. The app can then reopen offline within that worker's scope—even if the user never adds it to a home screen.</p>
+      </aside>
+    </section>
+
+    <figure class="diagram" aria-labelledby="big-picture-caption">
+      <figcaption id="big-picture-caption">The production PWA system: five parts with different jobs</figcaption>
+      <div class="flow">
+        <div class="node primary">Screen and components<small>Show state and accept intent</small></div><span class="connector" aria-hidden="true">→</span>
+        <div class="node">Feature services<small>Apply product rules</small></div><span class="connector" aria-hidden="true">→</span>
+        <div class="node local">Local database<small>Drafts, files, outbox, reference data</small></div><span class="connector" aria-hidden="true">⇄</span>
+        <div class="node server">API and storage<small>Shared, authoritative records</small></div>
+      </div>
+      <div class="flow" style="margin-top:.75rem">
+        <div class="node warning">Service worker<small>Caches the app shell; manages releases</small></div><span class="connector" aria-hidden="true">↕</span>
+        <div class="node">Browser cache<small>HTML, CSS, JavaScript, icons</small></div>
+      </div>
+      <p><strong>Do not merge these responsibilities.</strong> Cache Storage keeps HTTP responses. IndexedDB keeps structured application data. The service worker controls requests. Your foreground sync coordinator owns business synchronization unless you have proven cross-browser background support.</p>
+    </figure>
+
+    <section id="paths">
+      <p class="eyebrow">Choose your path</p>
+      <h2>Use the playbook for the work in front of you</h2>
+      <div class="grid">
+        <article class="card"><span class="card-number">Learn</span><h3>Build the right mental model</h3><p>Work through the lessons in order. Each one ends with a small knowledge check.</p><p><a href="lessons/01-mental-model.html">Begin with installation and offline behavior →</a></p></article>
+        <article class="card"><span class="card-number">Plan</span><h3>Make the important decisions first</h3><p>Classify the app, name each source of truth, design failure behavior, then choose tools.</p><p><a href="reference/decision-checklists.html#plan">Open the planning canvas →</a></p></article>
+        <article class="card"><span class="card-number">Build</span><h3>Implement in safe slices</h3><p>Ship the shell, reads, writes, files, security, and operations as independently testable layers.</p><p><a href="reference/decision-checklists.html#build">Open the build sequence →</a></p></article>
+        <article class="card"><span class="card-number">Audit</span><h3>Find evidence, not vibes</h3><p>Trace real code and behavior against clear invariants, then rank gaps by data-loss and release risk.</p><p><a href="reference/decision-checklists.html#audit">Open the audit rubric →</a></p></article>
+        <article class="card"><span class="card-number">Reference</span><h3>Look up a state or policy</h3><p>Use the state-machine atlas, cache matrix, glossary, and production gates during delivery.</p><p><a href="reference/state-machines.html">Browse the visual reference →</a></p></article>
+        <article class="card"><span class="card-number">Case study</span><h3>See the pattern in working code</h3><p>Study PLASCHEMA's field-worker PWA and the tradeoffs behind its durable foreground outbox.</p><p><a href="lessons/11-plaschema-case-study.html">Read the case study →</a></p></article>
+      </div>
+    </section>
+
+    <section id="lessons">
+      <p class="eyebrow">Eleven lessons</p>
+      <h2>From browser shell to field-ready system</h2>
+      <ol class="lesson-list">
+        <li><a href="lessons/01-mental-model.html"><span class="num">01</span><span><strong>The PWA mental model</strong><br><small>Installation, service-worker control, and offline reopening</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/02-capability-levels.html"><span class="num">02</span><span><strong>Choose the capability level</strong><br><small>Shell-only, offline-read, or transactional offline-write</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/03-data-architecture.html"><span class="num">03</span><span><strong>Design the data architecture</strong><br><small>Ownership, layers, boundaries, and data flow</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/04-service-worker-updates.html"><span class="num">04</span><span><strong>Ship the shell and safe updates</strong><br><small>Lifecycle, caching, waiting releases, and rollback</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/05-local-storage.html"><span class="num">05</span><span><strong>Build durable local storage</strong><br><small>IndexedDB, migrations, blobs, quotas, and cleanup</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/06-offline-reads.html"><span class="num">06</span><span><strong>Make reads honest offline</strong><br><small>Reference data, freshness, access changes, and replacement</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/07-durable-sync.html"><span class="num">07</span><span><strong>Build a durable write queue</strong><br><small>Idempotency, leases, retries, partial success, and conflicts</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/08-files-and-auth.html"><span class="num">08</span><span><strong>Handle files and offline sessions</strong><br><small>Local blobs, presigned uploads, identity, and expiry</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/09-security.html"><span class="num">09</span><span><strong>Protect sensitive device data</strong><br><small>Threats, controls, retention, shared devices, and XSS</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/10-testing-and-operations.html"><span class="num">10</span><span><strong>Test, release, observe, and recover</strong><br><small>Failure drills, real devices, migrations, and incidents</small></span><span class="arrow">→</span></a></li>
+        <li><a href="lessons/11-plaschema-case-study.html"><span class="num">11</span><span><strong>PLASCHEMA case study</strong><br><small>What works, why it works, and where to harden next</small></span><span class="arrow">→</span></a></li>
+      </ol>
+    </section>
+  </main>
+
+  <aside class="update-toast" data-update-toast hidden aria-live="polite"><p><strong>A new playbook version is ready.</strong><br>Your current page will stay open until you choose to update.</p><button type="button">Update and reload</button></aside>
+  <footer class="site-footer"><div class="footer-inner"><span>Production PWA Engineering Playbook</span><span>Plain language · Detailed systems · Safe offline work</span></div></footer>
+</body>
+</html>
