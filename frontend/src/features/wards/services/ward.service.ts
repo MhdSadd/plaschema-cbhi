@@ -60,22 +60,26 @@ export async function uploadWardsBatch(file: File): Promise<WardBatchResult> {
   return result
 }
 
+type WardListResponse = ApiResponse<WardListItemApi[], CursorPaginationMeta> & {
+  summary?: WardListResult['summary']
+}
+
 /** GET /wards */
 export async function fetchWards(
   params: WardListParams,
 ): Promise<WardListResult> {
-  const response = await _get<
-    ApiResponse<WardListItemApi[], CursorPaginationMeta>
-  >('/wards', {
+  const response = await _get<WardListResponse>('/wards', {
     cursor: params.cursor,
     limit: params.limit,
     search: params.search,
+    lga: params.lga,
     status: params.status,
   })
 
   return {
     items: response.data.data.map(mapWardListItem),
     meta: response.data.meta,
+    summary: response.data.summary,
   }
 }
 

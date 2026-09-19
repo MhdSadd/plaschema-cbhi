@@ -12,6 +12,7 @@ export class ListWardsUseCase {
     cursor?: string;
     limit: number;
     search?: string;
+    lga?: string;
     status?: WardStatus;
   }) {
     return this.wards.list(query);

@@ -65,6 +65,10 @@ export type KpiAbsoluteChange = {
   changeAbsolute: number;
 };
 
+export type KpiWardsChange = KpiAbsoluteChange & {
+  active: number;
+};
+
 export type DashboardTrendPoint = {
   key: string;
   label: string;
@@ -102,7 +106,7 @@ export type DashboardOverview = {
     newEnrollments: KpiPercentChange;
     totalHouseholds: KpiPercentChange;
     newHouseholds: KpiPercentChange;
-    totalFacilities: KpiAbsoluteChange;
+    totalWards: KpiWardsChange;
     fieldWorkers: KpiAbsoluteChange;
   };
   householdOverview: {

@@ -92,6 +92,14 @@ export class KpiAbsoluteChangeDto {
   changeAbsolute!: number;
 }
 
+export class KpiWardsChangeDto extends KpiAbsoluteChangeDto {
+  @ApiProperty({
+    example: 142,
+    description: 'Wards with status active in the current filter scope',
+  })
+  active!: number;
+}
+
 export class DashboardKpisDto {
   @ApiProperty({ type: KpiPercentChangeDto })
   totalEnrollments!: KpiPercentChangeDto;
@@ -111,8 +119,8 @@ export class DashboardKpisDto {
   @ApiProperty({ type: KpiPercentChangeDto })
   newHouseholds!: KpiPercentChangeDto;
 
-  @ApiProperty({ type: KpiAbsoluteChangeDto })
-  totalFacilities!: KpiAbsoluteChangeDto;
+  @ApiProperty({ type: KpiWardsChangeDto })
+  totalWards!: KpiWardsChangeDto;
 
   @ApiProperty({ type: KpiAbsoluteChangeDto })
   fieldWorkers!: KpiAbsoluteChangeDto;

@@ -3,6 +3,7 @@ import type { CursorPaginationMeta } from '@/api'
 export interface CreateWardPayload {
   name: string
   lga: string
+  status?: WardStatus
 }
 
 export interface CreatedWardApi {
@@ -30,16 +31,23 @@ export interface WardBatchError {
 
 export interface WardBatchResult {
   created: number
+  skipped: number
   failed: number
   errors: WardBatchError[]
 }
 
 export type WardStatus = 'active' | 'inactive'
 
+export interface WardListSummary {
+  active: number
+  totalBeneficiaries: number
+}
+
 export interface WardListParams {
   cursor?: string
   limit?: number
   search?: string
+  lga?: string
   status?: WardStatus
 }
 
@@ -50,7 +58,6 @@ export interface WardListItem {
   lga: string
   fieldWorkers: number
   beneficiaries: number
-  newEnrollments: number
   status: WardStatus
 }
 
@@ -61,13 +68,13 @@ export interface WardListItemApi {
   lga: string
   fieldWorkers?: number | null
   beneficiaries?: number | null
-  newEnrollments?: number | null
   status?: WardStatus
 }
 
 export interface WardListResult {
   items: WardListItem[]
   meta: CursorPaginationMeta
+  summary?: WardListSummary
 }
 
 export interface WardRecord {

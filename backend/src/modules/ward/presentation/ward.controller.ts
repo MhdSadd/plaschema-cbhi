@@ -102,12 +102,14 @@ export class WardController {
           type: 'string',
           format: 'binary',
           description:
-            'CSV or Excel (.xlsx/.xls) with columns: name,lga and optional code (when code is present it is used; otherwise code is derived as `<LGA_3>-<NAME_3>`)',
+            'CSV or Excel (.xlsx/.xls) with columns: name,lga and optional code (when code is present it is used; otherwise code is derived as `<LGA_3>-<NAME_3>`). New wards default to inactive.',
         },
       },
     },
   })
-  @ApiOperation({ summary: 'Batch create wards from CSV or Excel' })
+  @ApiOperation({
+    summary: 'Batch create wards from CSV or Excel (new rows default to inactive)',
+  })
   @ApiOkResponse({ type: BatchUploadResultDto })
   batchCreate(@UploadedFile() file?: Express.Multer.File) {
     const upload = assertSupportedBatchUpload(file);
@@ -136,6 +138,7 @@ export class WardController {
     type: String,
     description: 'Search by ward code, name or LGA',
   })
+  @ApiQuery({ name: 'lga', required: false, type: String })
   @ApiQuery({
     name: 'status',
     required: false,
@@ -152,6 +155,7 @@ export class WardController {
         limit: result.limit,
         total: result.total,
       } satisfies CursorPaginationMetaDto,
+      ...(result.summary ? { summary: result.summary } : {}),
     };
   }
 

@@ -68,7 +68,7 @@ export class CreateHouseholdEnrollmentResponseDto {
   @ApiProperty({ format: 'uuid' })
   id!: string;
 
-  @ApiProperty({ example: 'PL/CBHI/2026/010-01' })
+  @ApiProperty({ example: 'JOS-VOM-001-01' })
   enrollmentId!: string;
 
   @ApiProperty({ format: 'uuid' })

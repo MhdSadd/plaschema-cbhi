@@ -1,11 +1,14 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { LoaderCircle, X } from 'lucide-react'
 import { Dialog } from 'radix-ui'
-import { type FieldErrors, useForm } from 'react-hook-form'
+import { useState } from 'react'
+import { type FieldErrors, useForm, useWatch } from 'react-hook-form'
 import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { getApiErrorMessage } from '@/api'
+import { linkedWardFacilityStatusDescription } from '@/components/admin/linked-ward-facility-status-copy'
+import { LinkedWardFacilityStatusDialog } from '@/components/admin/linked-ward-facility-status-dialog'
 import { btnPrimary, btnSecondary } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +19,7 @@ import type { UpdateWardPayload, WardRecord, WardStatus } from '../types'
 interface EditWardDialogProps {
   open: boolean
   ward: WardRecord
+  linkedFacilityCount?: number
   onOpenChange: (open: boolean) => void
 }
 
@@ -31,16 +35,33 @@ const editWardSchema = z.object({
   status: z.enum(['active', 'inactive']),
 })
 
-export function EditWardDialog({ open, ward, onOpenChange }: EditWardDialogProps) {
+export function EditWardDialog({ open, ward, linkedFacilityCount = 0, onOpenChange }: EditWardDialogProps) {
   const mutation = useUpdateWard()
-  const { register, handleSubmit, formState: { errors } } = useForm<EditWardFormValues>({
+  const [statusConfirmOpen, setStatusConfirmOpen] = useState(false)
+  const [pendingPayload, setPendingPayload] = useState<UpdateWardPayload | null>(null)
+  const { register, handleSubmit, control, formState: { errors } } = useForm<EditWardFormValues>({
     resolver: zodResolver(editWardSchema),
     defaultValues: { name: ward.name, lga: ward.lga, status: ward.status },
   })
+  const selectedStatus = useWatch({ control, name: 'status' })
+  const statusWillSync = selectedStatus !== ward.status
 
   function changeOpen(nextOpen: boolean) {
     if (!nextOpen && mutation.isPending) return
     onOpenChange(nextOpen)
+  }
+
+  function save(payload: UpdateWardPayload) {
+    mutation.mutate(
+      { id: ward.id, payload },
+      {
+        onSuccess: () => {
+          setStatusConfirmOpen(false)
+          setPendingPayload(null)
+          onOpenChange(false)
+        },
+      },
+    )
   }
 
   function submit(values: EditWardFormValues) {
@@ -55,7 +76,18 @@ export function EditWardDialog({ open, ward, onOpenChange }: EditWardDialogProps
       return
     }
 
-    mutation.mutate({ id: ward.id, payload }, { onSuccess: () => onOpenChange(false) })
+    if (payload.status !== undefined) {
+      setPendingPayload(payload)
+      setStatusConfirmOpen(true)
+      return
+    }
+
+    save(payload)
+  }
+
+  function confirmStatusChange() {
+    if (!pendingPayload) return
+    save(pendingPayload)
   }
 
   function invalid(formErrors: FieldErrors<EditWardFormValues>) {
@@ -93,6 +125,11 @@ export function EditWardDialog({ open, ward, onOpenChange }: EditWardDialogProps
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
+                {statusWillSync && selectedStatus && (
+                  <p className="text-xs text-muted-foreground" id="edit-ward-status-linked-note">
+                    {linkedWardFacilityStatusDescription('ward', selectedStatus, { linkedFacilityCount })}
+                  </p>
+                )}
               </div>
             </div>
             <div className="flex gap-3 px-6 pb-6">
@@ -104,6 +141,15 @@ export function EditWardDialog({ open, ward, onOpenChange }: EditWardDialogProps
           </form>
         </Dialog.Content>
       </Dialog.Portal>
+      <LinkedWardFacilityStatusDialog
+        isPending={mutation.isPending}
+        linkedFacilityCount={linkedFacilityCount}
+        nextStatus={pendingPayload?.status ?? ward.status}
+        onConfirm={confirmStatusChange}
+        onOpenChange={setStatusConfirmOpen}
+        open={statusConfirmOpen}
+        scope="ward"
+      />
     </Dialog.Root>
   )
 }

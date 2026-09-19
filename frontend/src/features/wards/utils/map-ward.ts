@@ -26,6 +26,7 @@ export function isWardBatchResult(value: unknown): value is WardBatchResult {
   const result = value as Partial<WardBatchResult>
   return (
     typeof result.created === 'number' &&
+    typeof result.skipped === 'number' &&
     typeof result.failed === 'number' &&
     Array.isArray(result.errors)
   )
@@ -39,7 +40,6 @@ export function mapWardListItem(ward: WardListItemApi): WardListItem {
     lga: ward.lga,
     fieldWorkers: countOrZero(ward.fieldWorkers),
     beneficiaries: countOrZero(ward.beneficiaries),
-    newEnrollments: countOrZero(ward.newEnrollments),
     status: ward.status ?? 'active',
   }
 }

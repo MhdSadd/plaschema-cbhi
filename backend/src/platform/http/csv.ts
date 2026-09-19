@@ -191,6 +191,7 @@ export function normalizeCsvRow(row: CsvRow): CsvRow {
 
 export type BatchUploadResult = {
   created: number;
+  skipped: number;
   failed: number;
   errors: Array<{ row: number; message: string }>;
 };

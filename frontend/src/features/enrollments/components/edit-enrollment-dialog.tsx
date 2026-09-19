@@ -164,7 +164,6 @@ export function EditEnrollmentDialog({ record, open, onOpenChange }: EditEnrollm
       state: 'Plateau',
       fieldWorkers: 0,
       beneficiaries: 0,
-      newEnrollments: 0,
       status: 'active',
     }]])
     for (const ward of wardsQuery.data?.pages.flatMap((page) => page.items) ?? []) {

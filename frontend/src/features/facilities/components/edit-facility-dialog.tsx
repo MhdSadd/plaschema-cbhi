@@ -7,6 +7,8 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { getApiErrorMessage } from '@/api'
+import { linkedWardFacilityStatusDescription } from '@/components/admin/linked-ward-facility-status-copy'
+import { LinkedWardFacilityStatusDialog } from '@/components/admin/linked-ward-facility-status-dialog'
 import { btnPrimary, btnSecondary } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,20 +25,38 @@ const schema = z.object({ name: z.string().trim().min(2).max(160), wardId: z.str
 export function EditFacilityDialog({ open, facility, onOpenChange }: EditFacilityDialogProps) {
   const [wardSearch, setWardSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [statusConfirmOpen, setStatusConfirmOpen] = useState(false)
+  const [pendingPayload, setPendingPayload] = useState<UpdateHealthFacilityPayload | null>(null)
   const wardsQuery = useWardOptions(debouncedSearch)
   const mutation = useUpdateHealthFacility()
   const { control, register, handleSubmit, formState: { errors } } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: { name: facility.name, wardId: facility.wardId, type: facility.type, level: facility.level, status: facility.status } })
 
   useEffect(() => { const timer = window.setTimeout(() => setDebouncedSearch(wardSearch.trim()), 300); return () => window.clearTimeout(timer) }, [wardSearch])
   const selectedWardId = useWatch({ control, name: 'wardId' })
+  const selectedStatus = useWatch({ control, name: 'status' })
+  const statusWillSync = selectedStatus !== facility.status
   const wards = useMemo(() => {
-    const byId = new Map<string, WardListItem>([[facility.ward.id, { ...facility.ward, state: 'Plateau', fieldWorkers: 0, beneficiaries: 0, newEnrollments: 0, status: 'active' }]])
+    const byId = new Map<string, WardListItem>([[facility.ward.id, { ...facility.ward, state: 'Plateau', fieldWorkers: 0, beneficiaries: 0, status: 'active' }]])
     for (const ward of wardsQuery.data?.pages.flatMap((page) => page.items) ?? []) byId.set(ward.id, ward)
     return [...byId.values()]
   }, [facility.ward, wardsQuery.data])
   const selectedWard = wards.find((ward) => ward.id === selectedWardId)
 
   function changeOpen(nextOpen: boolean) { if (!nextOpen && mutation.isPending) return; onOpenChange(nextOpen) }
+
+  function save(payload: UpdateHealthFacilityPayload) {
+    mutation.mutate(
+      { id: facility.id, payload },
+      {
+        onSuccess: () => {
+          setStatusConfirmOpen(false)
+          setPendingPayload(null)
+          onOpenChange(false)
+        },
+      },
+    )
+  }
+
   function submit(values: Values) {
     const payload: UpdateHealthFacilityPayload = {}
     if (values.name !== facility.name) payload.name = values.name
@@ -45,8 +65,20 @@ export function EditFacilityDialog({ open, facility, onOpenChange }: EditFacilit
     if (values.level !== facility.level) payload.level = values.level
     if (values.status !== facility.status) payload.status = values.status
     if (Object.keys(payload).length === 0) { toast.info('No facility changes to save.'); onOpenChange(false); return }
-    mutation.mutate({ id: facility.id, payload }, { onSuccess: () => onOpenChange(false) })
+    if (payload.status !== undefined) {
+      setPendingPayload(payload)
+      setStatusConfirmOpen(true)
+      return
+    }
+    save(payload)
   }
+
+  function confirmStatusChange() {
+    if (!pendingPayload) return
+    save(pendingPayload)
+  }
+
+  const syncWardName = selectedWard?.name ?? facility.ward.name
 
   return <Dialog.Root onOpenChange={changeOpen} open={open}><Dialog.Portal><Dialog.Overlay className="fixed inset-0 z-50 bg-black/20" /><Dialog.Content className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%-2rem)] max-w-xl -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-card shadow-2xl outline-none" onEscapeKeyDown={(event) => mutation.isPending && event.preventDefault()} onInteractOutside={(event) => mutation.isPending && event.preventDefault()}>
     <div className="flex items-start justify-between border-b border-border px-6 py-5"><div><Dialog.Title className="text-lg font-semibold">Edit Facility</Dialog.Title><Dialog.Description className="mt-1 text-sm text-muted-foreground">Update supported facility information.</Dialog.Description></div><Button aria-label="Close edit facility dialog" disabled={mutation.isPending} onClick={() => changeOpen(false)} size="icon" variant="ghost"><X aria-hidden="true" /></Button></div>
@@ -56,7 +88,17 @@ export function EditFacilityDialog({ open, facility, onOpenChange }: EditFacilit
       <div className="flex flex-col gap-2"><label className="text-sm font-semibold" htmlFor="edit-facility-ward-search">Ward</label><div className="relative"><Search aria-hidden="true" className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input className="pl-9" id="edit-facility-ward-search" onChange={(event) => setWardSearch(event.target.value)} placeholder="Search wards..." value={wardSearch} /></div><select {...register('wardId', { onChange: () => mutation.reset() })} className="h-9 rounded-lg border border-input bg-background px-3 text-sm">{wards.map((ward) => <option key={ward.id} value={ward.id}>{ward.name} — {ward.lga}</option>)}</select>{wardsQuery.hasNextPage && <Button disabled={wardsQuery.isFetchingNextPage} onClick={() => void wardsQuery.fetchNextPage()} type="button" variant="outline">{wardsQuery.isFetchingNextPage ? 'Loading…' : 'Load more wards'}</Button>}</div>
       <div className="grid gap-4 sm:grid-cols-2"><div><label className="mb-1.5 block text-sm font-semibold" htmlFor="edit-facility-state">State</label><Input id="edit-facility-state" readOnly value="Plateau" /></div><div><label className="mb-1.5 block text-sm font-semibold" htmlFor="edit-facility-lga">LGA</label><Input id="edit-facility-lga" readOnly value={selectedWard?.lga ?? facility.lga} /></div></div>
       <div><label className="mb-1.5 block text-sm font-semibold" htmlFor="edit-facility-type">Facility Type</label><Input {...register('type', { onChange: () => mutation.reset() })} id="edit-facility-type" />{errors.type && <p className="text-xs text-destructive">Enter a facility type up to 120 characters.</p>}</div>
-      <div className="grid gap-4 sm:grid-cols-2"><div><label className="mb-1.5 block text-sm font-semibold" htmlFor="edit-facility-level">Level</label><select {...register('level')} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" id="edit-facility-level"><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="tertiary">Tertiary</option></select></div><div><label className="mb-1.5 block text-sm font-semibold" htmlFor="edit-facility-status">Status</label><select {...register('status')} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" id="edit-facility-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div></div>
+      <div className="grid gap-4 sm:grid-cols-2"><div><label className="mb-1.5 block text-sm font-semibold" htmlFor="edit-facility-level">Level</label><select {...register('level')} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" id="edit-facility-level"><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="tertiary">Tertiary</option></select></div><div><label className="mb-1.5 block text-sm font-semibold" htmlFor="edit-facility-status">Status</label><select {...register('status')} className="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm" id="edit-facility-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>{statusWillSync && selectedStatus && <p className="mt-1.5 text-xs text-muted-foreground">{linkedWardFacilityStatusDescription('facility', selectedStatus, { wardName: syncWardName })}</p>}</div></div>
     </div><div className="flex gap-3 px-6 pb-6"><Button className={`${btnSecondary} flex-1`} disabled={mutation.isPending} onClick={() => changeOpen(false)} type="button" variant="outline">Cancel</Button><Button className={`${btnPrimary} flex-1`} disabled={mutation.isPending} type="submit">{mutation.isPending ? <><LoaderCircle aria-hidden="true" className="animate-spin" /> Saving…</> : 'Save Changes'}</Button></div></form>
-  </Dialog.Content></Dialog.Portal></Dialog.Root>
+  </Dialog.Content></Dialog.Portal>
+  <LinkedWardFacilityStatusDialog
+    isPending={mutation.isPending}
+    nextStatus={pendingPayload?.status ?? facility.status}
+    onConfirm={confirmStatusChange}
+    onOpenChange={setStatusConfirmOpen}
+    open={statusConfirmOpen}
+    scope="facility"
+    wardName={syncWardName}
+  />
+  </Dialog.Root>
 }

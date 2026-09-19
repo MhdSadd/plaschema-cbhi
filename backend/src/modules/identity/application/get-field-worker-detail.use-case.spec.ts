@@ -11,7 +11,7 @@ describe('GetFieldWorkerDetailUseCase', () => {
     passwordHash: 'hash',
     role: 'field_worker' as const,
     status: 'active' as const,
-    phone: '+2348034567890',
+    phone: '08034567890',
     lastSyncedAt: new Date('2026-08-29T20:00:00.000Z'),
     isPasswordChangeRequired: false,
     assignedWards: [{ id: 'ward-1', name: 'Vom Central', lga: 'Jos South' }],

@@ -37,15 +37,25 @@ export function useUploadWardsBatch() {
       const createdLabel = result.created === 1 ? 'ward' : 'wards'
       const failedLabel = result.failed === 1 ? 'row' : 'rows'
 
+      const skippedNote =
+        result.skipped > 0
+          ? ` ${result.skipped} already existed and were skipped.`
+          : ''
+
       if (result.failed > 0) {
         toast.warning(
-          `${result.created} ${createdLabel} imported; ${result.failed} ${failedLabel} failed.`,
+          `${result.created} ${createdLabel} imported; ${result.failed} ${failedLabel} failed.${skippedNote}`,
         )
         return
       }
 
+      if (result.created === 0 && result.skipped > 0) {
+        toast.success(`No new wards; ${result.skipped} already existed.`)
+        return
+      }
+
       toast.success(
-        `${result.created} ${createdLabel} imported successfully.`,
+        `${result.created} ${createdLabel} imported successfully.${skippedNote}`,
       )
     },
     onError: (error) => {

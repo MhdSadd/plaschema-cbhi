@@ -1,6 +1,7 @@
 import {
   formatEnrollmentId,
   formatHouseholdMemberEnrollmentId,
+  headEnrollmentIdFromHouseholdCode,
 } from './enrollment-id';
 
 describe('formatEnrollmentId', () => {
@@ -11,13 +12,21 @@ describe('formatEnrollmentId', () => {
   });
 });
 
+describe('headEnrollmentIdFromHouseholdCode', () => {
+  it('uses the trimmed household code as the head enrollment ID', () => {
+    expect(headEnrollmentIdFromHouseholdCode('  BAR-TAF-001  ')).toBe(
+      'BAR-TAF-001',
+    );
+  });
+});
+
 describe('formatHouseholdMemberEnrollmentId', () => {
   it('appends a two-digit member suffix to the head enrollment ID', () => {
     expect(
-      formatHouseholdMemberEnrollmentId('PL/CBHI/2026/010', 1),
-    ).toBe('PL/CBHI/2026/010-01');
+      formatHouseholdMemberEnrollmentId('BAR-TAF-001', 1),
+    ).toBe('BAR-TAF-001-01');
     expect(
-      formatHouseholdMemberEnrollmentId('PL/CBHI/2026/010', 12),
-    ).toBe('PL/CBHI/2026/010-12');
+      formatHouseholdMemberEnrollmentId('BAR-TAF-001', 12),
+    ).toBe('BAR-TAF-001-12');
   });
 });

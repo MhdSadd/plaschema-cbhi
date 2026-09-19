@@ -186,6 +186,7 @@ export interface HealthFacilityBatchError {
 
 export interface HealthFacilityBatchResult {
   created: number
+  skipped: number
   failed: number
   errors: HealthFacilityBatchError[]
 }

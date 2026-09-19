@@ -56,7 +56,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
 
   const enrollmentFixture = (overrides: Partial<Enrollment> = {}): Enrollment => ({
     id: '01900000-0000-7000-8000-000000000001',
-    enrollmentId: 'PL/CBHI/2026/010',
+    enrollmentId: 'JOS-VOM-001',
     idempotencyId: headIdempotencyId,
     capturedAt: new Date('2026-09-09T10:00:00.000Z'),
     status: 'pending',
@@ -124,7 +124,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
 
     enrollments = {
       findByIdempotencyId: jest.fn(),
-      allocateEnrollmentId: jest.fn(),
+      findByPublicEnrollmentId: jest.fn(),
       findByIdentityKey: jest.fn(),
     } as unknown as jest.Mocked<EnrollmentRepository>;
 
@@ -192,7 +192,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
     passportPrint.ensureStored.mockResolvedValue('passport-print.jpg');
     households.findByLocalId.mockResolvedValue(null);
     households.findByWardAndCode.mockResolvedValue(null);
-    enrollments.allocateEnrollmentId.mockResolvedValue('PL/CBHI/2026/010');
+    enrollments.findByPublicEnrollmentId.mockResolvedValue(null);
   }
 
   it('replays an existing idempotent household enrollment', async () => {
@@ -226,7 +226,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
 
     const result = await useCase.execute(actor, baseInput);
 
-    expect(result.enrollmentId).toBe('PL/CBHI/2026/010');
+    expect(result.enrollmentId).toBe('JOS-VOM-001');
     expect(households.createHeadEnrollment).toHaveBeenCalled();
     expect(recordActivity.execute).toHaveBeenCalled();
   });

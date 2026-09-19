@@ -9,8 +9,10 @@ import { getApiErrorMessage } from '@/api'
 import { btnPrimary, btnSecondary } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { PLATEAU_LGAS } from '@/lib/geography'
 
 import { useCreateWard } from '../hooks/useWardMutations'
+import type { WardStatus } from '../types'
 
 interface CreateWardDialogProps {
   open: boolean
@@ -20,8 +22,11 @@ interface CreateWardDialogProps {
 
 interface CreateWardFormValues {
   name: string
-  lga: string
+  lga: (typeof PLATEAU_LGAS)[number]
+  status: WardStatus
 }
+
+const plateauLgaEnum = PLATEAU_LGAS as unknown as [string, ...string[]]
 
 const createWardSchema = z.object({
   name: z
@@ -29,11 +34,8 @@ const createWardSchema = z.object({
     .trim()
     .min(2, 'Ward name must be at least 2 characters.')
     .max(120, 'Ward name must be 120 characters or fewer.'),
-  lga: z
-    .string()
-    .trim()
-    .min(2, 'LGA must be at least 2 characters.')
-    .max(120, 'LGA must be 120 characters or fewer.'),
+  lga: z.enum(plateauLgaEnum, { message: 'Select an LGA.' }),
+  status: z.enum(['active', 'inactive']),
 })
 
 export function CreateWardDialog({
@@ -49,7 +51,7 @@ export function CreateWardDialog({
     formState: { errors },
   } = useForm<CreateWardFormValues>({
     resolver: zodResolver(createWardSchema),
-    defaultValues: { name: '', lga: '' },
+    defaultValues: { name: '', lga: '' as CreateWardFormValues['lga'], status: 'active' },
   })
 
   function handleDialogChange(nextOpen: boolean) {
@@ -77,6 +79,7 @@ export function CreateWardDialog({
     const message =
       formErrors.name?.message ??
       formErrors.lga?.message ??
+      formErrors.status?.message ??
       'Check the ward details and try again.'
     toast.error(message)
   }
@@ -144,7 +147,7 @@ export function CreateWardDialog({
                   autoFocus
                   className="h-auto rounded-lg px-3 py-2.5"
                   id="ward-name"
-                  placeholder="e.g. Gwagwalada Central"
+                  placeholder="e.g. Vom Central"
                 />
                 {errors.name?.message && (
                   <p className="text-xs text-destructive" id="ward-name-error">
@@ -175,16 +178,24 @@ export function CreateWardDialog({
                 >
                   LGA <span className="text-destructive">*</span>
                 </label>
-                <Input
+                <select
                   {...register('lga', {
                     onChange: () => createMutation.reset(),
                   })}
                   aria-describedby={errors.lga ? 'ward-lga-error' : undefined}
                   aria-invalid={Boolean(errors.lga)}
-                  className="h-auto rounded-lg px-3 py-2.5"
+                  className="h-auto rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   id="ward-lga"
-                  placeholder="e.g. Jos South"
-                />
+                >
+                  <option disabled value="">
+                    Select an LGA
+                  </option>
+                  {PLATEAU_LGAS.map((item) => (
+                    <option key={item} value={item}>
+                      {item}
+                    </option>
+                  ))}
+                </select>
                 {errors.lga?.message && (
                   <p className="text-xs text-destructive" id="ward-lga-error">
                     {errors.lga.message}
@@ -199,12 +210,16 @@ export function CreateWardDialog({
                 >
                   Status
                 </label>
-                <Input
-                  className="h-auto rounded-lg bg-muted/50 px-3 py-2.5"
+                <select
+                  {...register('status', {
+                    onChange: () => createMutation.reset(),
+                  })}
+                  className="h-auto rounded-lg border border-input bg-background px-3 py-2.5 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   id="ward-status"
-                  readOnly
-                  value="Active"
-                />
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
               </div>
             </div>
 

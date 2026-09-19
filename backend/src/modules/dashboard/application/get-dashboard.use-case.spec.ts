@@ -16,7 +16,7 @@ describe('GetDashboardUseCase', () => {
       newEnrollments: { value: 3, changePercent: 50 },
       totalHouseholds: { value: 12, changePercent: 20 },
       newHouseholds: { value: 2, changePercent: 20 },
-      totalFacilities: { value: 4, changeAbsolute: 1 },
+      totalWards: { value: 180, active: 142, changeAbsolute: 2 },
       fieldWorkers: { value: 2, changeAbsolute: 0 },
     },
     householdOverview: {

@@ -124,6 +124,7 @@ export interface EnrollmentRepository {
   allocateEnrollmentId(year: number): Promise<string>;
   create(input: CreateEnrollmentRecordInput): Promise<Enrollment>;
   findById(id: string): Promise<Enrollment | null>;
+  findByPublicEnrollmentId(enrollmentId: string): Promise<Enrollment | null>;
   findByIdempotencyId(idempotencyId: string): Promise<Enrollment | null>;
   findByIdentityKey(input: {
     firstNameNormalized: string;

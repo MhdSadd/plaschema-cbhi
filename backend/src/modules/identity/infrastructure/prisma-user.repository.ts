@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { buildCursorPage } from '../../../platform/http/cursor-pagination';
+import {
+  createdAtDescCursorWhere,
+  decodeCreatedAtDescCursor,
+  encodeCreatedAtDescCursor,
+} from '../../../platform/http/list-cursor';
 import { toQueryInt } from '../../../platform/http/query-transforms';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
 import type {
@@ -135,9 +140,12 @@ export class PrismaUserRepository implements UserRepository {
           }
         : {}),
     };
+    const decodedCursor = query.cursor
+      ? decodeCreatedAtDescCursor(query.cursor)
+      : null;
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
+      ...(decodedCursor ? createdAtDescCursorWhere(decodedCursor) : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -145,7 +153,7 @@ export class PrismaUserRepository implements UserRepository {
       this.prisma.user.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         include: this.include,
       }),
     ]);
@@ -162,11 +170,22 @@ export class PrismaUserRepository implements UserRepository {
       };
     }
 
-    return buildCursorPage(
+    const page = buildCursorPage(
       rows.map((row) => toPublicUser(this.map(row))),
       limit,
       total,
     );
+    const lastRow = (rows.length > limit ? rows.slice(0, limit) : rows).at(-1);
+    return {
+      ...page,
+      nextCursor:
+        page.hasMore && lastRow
+          ? encodeCreatedAtDescCursor({
+              createdAt: lastRow.createdAt,
+              id: lastRow.id,
+            })
+          : null,
+    };
   }
 
   private async buildFieldWorkerListSummary(
@@ -238,11 +257,17 @@ export class PrismaUserRepository implements UserRepository {
     });
 
     const hasMore = rows.length > limit;
-    const last = items[items.length - 1];
+    const lastRow = pageRows.at(-1);
 
     return {
       items,
-      nextCursor: hasMore && last ? last.id : null,
+      nextCursor:
+        hasMore && lastRow
+          ? encodeCreatedAtDescCursor({
+              createdAt: lastRow.createdAt,
+              id: lastRow.id,
+            })
+          : null,
       hasMore,
       limit,
       total,
@@ -289,6 +314,17 @@ export class PrismaUserRepository implements UserRepository {
       where: { id: { in: unique } },
     });
     return count === unique.length;
+  }
+
+  async findLgasForWardIds(wardIds: string[]): Promise<string[]> {
+    if (wardIds.length === 0) {
+      return [];
+    }
+    const rows = await this.prisma.ward.findMany({
+      where: { id: { in: [...new Set(wardIds)] } },
+      select: { lga: true },
+    });
+    return rows.map((row) => row.lga);
   }
 
   async findFieldWorkersByIds(

@@ -79,6 +79,21 @@ export function toPublicUser(user: User): PublicUser {
   return publicUser;
 }
 
+const FIELD_WORKER_PHONE_PATTERN = /^\d{11}$/;
+
+export function assertFieldWorkerPhone(phone: string | null | undefined): void {
+  if (!phone || !FIELD_WORKER_PHONE_PATTERN.test(phone.trim())) {
+    throw new Error('INVALID_FIELD_WORKER_PHONE');
+  }
+}
+
+export function assertAssignedWardsSingleLga(lgas: string[]): void {
+  const normalized = lgas.map((lga) => lga.trim().toLowerCase()).filter(Boolean);
+  if (new Set(normalized).size > 1) {
+    throw new Error('ASSIGNED_WARDS_MULTIPLE_LGAS');
+  }
+}
+
 export function assertUserRoleConstraints(input: {
   role: UserRole;
   phone?: string | null;
@@ -88,5 +103,6 @@ export function assertUserRoleConstraints(input: {
     if (!input.phone || input.phone.trim().length === 0) {
       throw new Error('PHONE_REQUIRED_FOR_FIELD_WORKER');
     }
+    assertFieldWorkerPhone(input.phone);
   }
 }

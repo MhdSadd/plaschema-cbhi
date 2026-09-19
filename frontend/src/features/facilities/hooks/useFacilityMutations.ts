@@ -29,10 +29,20 @@ export function useUploadHealthFacilitiesBatch() {
     mutationFn: uploadHealthFacilitiesBatch,
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: facilityKeys.lists() })
+      const skippedNote =
+        result.skipped > 0
+          ? ` ${result.skipped} already existed and were skipped.`
+          : ''
       if (result.failed > 0) {
-        toast.warning(`${result.created} facilities imported; ${result.failed} rows failed.`)
+        toast.warning(
+          `${result.created} facilities imported; ${result.failed} rows failed.${skippedNote}`,
+        )
+      } else if (result.created === 0 && result.skipped > 0) {
+        toast.success(`No new facilities; ${result.skipped} already existed.`)
       } else {
-        toast.success(`${result.created} facilities imported successfully.`)
+        toast.success(
+          `${result.created} facilities imported successfully.${skippedNote}`,
+        )
       }
     },
     onError: (error) => toast.error(getApiErrorMessage(error, 'Unable to upload the facilities file.')),

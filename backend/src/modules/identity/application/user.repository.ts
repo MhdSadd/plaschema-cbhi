@@ -53,6 +53,7 @@ export interface UserRepository {
   list(query: ListUsersQuery): Promise<PaginatedUsers>;
   update(id: string, input: UpdateUserInput): Promise<PublicUser>;
   wardIdsExist(wardIds: string[]): Promise<boolean>;
+  findLgasForWardIds(wardIds: string[]): Promise<string[]>;
   findFieldWorkersByIds(
     ids: string[],
   ): Promise<Array<{ id: string; name: string }>>;
