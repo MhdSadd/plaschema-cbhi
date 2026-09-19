@@ -81,7 +81,7 @@ Passport: JPEG/PNG/WebP. ID document: image or PDF. Max 5 MB each.
 
 **Not collected:** next-of-kin name/relationship (removed from API). Do not send them.
 
-**Categories (fixed):** `Elderly 65 and above`, `Indigent (very poor) / others`, `Internal displaced persons`, `Orphan`, `People Living with Disability`, `Pregnant Woman`, `Under 5 YEAR`.
+**Categories (fixed):** `Elderly 65 and above`, `Indigent (very poor) / others`, `IDP`, `Orphan`, `People Living with Disability`, `Pregnant Woman`, `Under 5 YEAR`.
 
 ---
 

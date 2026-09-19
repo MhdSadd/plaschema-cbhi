@@ -15,7 +15,7 @@ const owner = '01900000-0000-7000-8000-000000000001'
 function completeForm(): EnrollmentFormValues {
   return {
     ...EMPTY_ENROLLMENT_FORM,
-    category: 'Internal displaced persons', passportFileId: 'passport-file', passportName: 'passport.jpg',
+    category: 'IDP', passportFileId: 'passport-file', passportName: 'passport.jpg',
     idDocumentFileId: 'id-file', idDocumentName: 'id.pdf', title: 'mrs', firstName: 'Amina',
     lastName: 'Yusuf', gender: 'female', dateOfBirth: '1990-05-04', maritalStatus: 'married',
     phone: '+2348012345678', nin: '1234567890', lgaOfResidence: 'Jos North', residentialAddress: '12 Test Road',

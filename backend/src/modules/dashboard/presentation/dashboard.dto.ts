@@ -185,7 +185,7 @@ export class DashboardActivityItemDto {
 }
 
 export class DashboardCategoryCountDto {
-  @ApiProperty({ example: 'Internal displaced persons' })
+  @ApiProperty({ example: 'IDP' })
   category!: string;
 
   @ApiProperty({ example: 120 })

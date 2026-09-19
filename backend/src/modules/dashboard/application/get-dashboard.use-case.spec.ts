@@ -43,7 +43,7 @@ describe('GetDashboardUseCase', () => {
       granularity: 'monthly' as const,
       points: [{ key: '2026-08', label: 'Aug', count: 3 }],
     },
-    enrollmentByCategory: [{ category: 'Internal displaced persons', count: 3 }],
+    enrollmentByCategory: [{ category: 'IDP', count: 3 }],
     enrollmentByStatus: {
       active: { count: 2, percent: 66.7 },
       inactive: { count: 1, percent: 33.3 },

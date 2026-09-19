@@ -27,7 +27,7 @@ describe('UpdateEnrollmentUseCase', () => {
     idempotencyId: '01900000-0000-7000-8000-000000000002',
     capturedAt: null,
     status: 'active' as const,
-    category: 'Internal displaced persons',
+    category: 'IDP',
     enrolledByUserId: actor.id,
     wardId,
     healthFacilityId: facilityId,
