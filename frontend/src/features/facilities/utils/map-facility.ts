@@ -47,6 +47,7 @@ export function isHealthFacilityBatchResult(
   const result = value as Partial<HealthFacilityBatchResult>
   return (
     typeof result.created === 'number' &&
+    typeof result.skipped === 'number' &&
     typeof result.failed === 'number' &&
     Array.isArray(result.errors)
   )

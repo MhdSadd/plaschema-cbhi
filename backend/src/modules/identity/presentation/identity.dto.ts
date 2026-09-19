@@ -10,6 +10,7 @@ import {
   IsOptional,
   IsString,
   IsUUID,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -78,13 +79,12 @@ export class CreateUserDto {
   role!: 'admin' | 'field_worker';
 
   @ApiPropertyOptional({
-    example: '+2348012345678',
-    description: 'Required for field_worker; optional for admin',
+    example: '08012345678',
+    description: 'Required for field_worker (11 digits); optional for admin',
   })
   @IsOptional()
   @IsString()
-  @MinLength(7)
-  @MaxLength(32)
+  @Matches(/^\d{11}$/, { message: 'phone must be an 11-digit number' })
   phone?: string | null;
 
   @ApiPropertyOptional({
@@ -114,11 +114,10 @@ export class UpdateUserDto {
   @MaxLength(120)
   name?: string;
 
-  @ApiPropertyOptional({ example: '+2348012345678', nullable: true })
+  @ApiPropertyOptional({ example: '08012345678', nullable: true })
   @IsOptional()
   @IsString()
-  @MinLength(7)
-  @MaxLength(32)
+  @Matches(/^\d{11}$/, { message: 'phone must be an 11-digit number' })
   phone?: string | null;
 
   @ApiPropertyOptional({ enum: ['active', 'inactive'] })
@@ -212,7 +211,7 @@ export class FieldWorkerListItemDto {
   @ApiProperty({ example: 'Amina Yusuf' })
   name!: string;
 
-  @ApiPropertyOptional({ example: '+2348034567890', nullable: true })
+  @ApiPropertyOptional({ example: '08034567890', nullable: true })
   phone!: string | null;
 
   @ApiProperty({ example: 'amina.yusuf@plaschema.ng' })

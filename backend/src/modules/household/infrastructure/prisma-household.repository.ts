@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { buildCursorPage } from '../../../platform/http/cursor-pagination';
+import {
+  createdAtDescCursorWhere,
+  decodeCreatedAtDescCursor,
+  encodeCreatedAtDescCursor,
+} from '../../../platform/http/list-cursor';
 import { toQueryInt } from '../../../platform/http/query-transforms';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
 import { formatIsoDateOnly } from '../../enrollment/domain/enrollment-identity';
@@ -357,9 +362,12 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
           }
         : {}),
     };
+    const decodedCursor = query.cursor
+      ? decodeCreatedAtDescCursor(query.cursor)
+      : null;
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
+      ...(decodedCursor ? createdAtDescCursorWhere(decodedCursor) : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -367,7 +375,7 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
       this.prisma.household.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         include: {
           ward: { select: { id: true, name: true, lga: true, code: true } },
           headEnrollment: {
@@ -377,9 +385,8 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
       }),
     ]);
 
-    const items: HouseholdListItem[] = (
-      rows.length > limit ? rows.slice(0, limit) : rows
-    ).map((row) => ({
+    const pageRows = rows.length > limit ? rows.slice(0, limit) : rows;
+    const items: HouseholdListItem[] = pageRows.map((row) => ({
       id: row.id,
       householdLocalId: row.householdLocalId,
       householdCode: row.householdCode,
@@ -393,7 +400,18 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
       createdAt: row.createdAt,
     }));
 
-    return buildCursorPage(items, limit, total);
+    const page = buildCursorPage(items, limit, total);
+    const lastRow = pageRows.at(-1);
+    return {
+      ...page,
+      nextCursor:
+        page.hasMore && lastRow
+          ? encodeCreatedAtDescCursor({
+              createdAt: lastRow.createdAt,
+              id: lastRow.id,
+            })
+          : null,
+    };
   }
 
   async findWardIdsWithHouseholds(): Promise<string[]> {

@@ -12,6 +12,8 @@ import { useEnrollments } from '@/features/enrollments/hooks'
 
 import { useHealthFacilityDetail, useUpdateHealthFacility } from '../hooks'
 import type { HealthFacilityActivityEntry, HealthFacilityStatus } from '../types'
+import { LinkedWardFacilityStatusDialog } from '@/components/admin/linked-ward-facility-status-dialog'
+
 import { DeleteFacilityDialog } from './delete-facility-dialog'
 import { EditFacilityDialog } from './edit-facility-dialog'
 
@@ -42,6 +44,7 @@ export function FacilityDetailView({ facilityId }: FacilityDetailViewProps) {
   const [tab, setTab] = useState<Tab>('Overview')
   const [editOpen, setEditOpen] = useState(false)
   const [deleteOpen, setDeleteOpen] = useState(false)
+  const [statusConfirmOpen, setStatusConfirmOpen] = useState(false)
   const [beneficiaryCursors, setBeneficiaryCursors] = useState<Array<string | undefined>>([undefined])
   const [beneficiaryPage, setBeneficiaryPage] = useState(0)
   const beneficiaryQuery = useEnrollments(
@@ -59,7 +62,13 @@ export function FacilityDetailView({ facilityId }: FacilityDetailViewProps) {
   const beneficiaries = beneficiaryQuery.data?.items ?? []
   const beneficiaryMeta = beneficiaryQuery.data?.meta
   const nextStatus: HealthFacilityStatus = facility.status === 'active' ? 'inactive' : 'active'
-  function toggleStatus() { updateMutation.mutate({ id: facility.id, payload: { status: nextStatus } }) }
+  function toggleStatus() { setStatusConfirmOpen(true) }
+  function confirmToggleStatus() {
+    updateMutation.mutate(
+      { id: facility.id, payload: { status: nextStatus } },
+      { onSuccess: () => setStatusConfirmOpen(false) },
+    )
+  }
   function nextBeneficiaryPage() {
     const nextCursor = beneficiaryMeta?.nextCursor
     if (!beneficiaryMeta?.hasMore || !nextCursor) return
@@ -91,5 +100,14 @@ export function FacilityDetailView({ facilityId }: FacilityDetailViewProps) {
 
     {editOpen && <EditFacilityDialog facility={facility} onOpenChange={setEditOpen} open />}
     <DeleteFacilityDialog facilityId={facility.id} facilityName={facility.name} onDeleted={() => navigate('/admin/facilities')} onOpenChange={setDeleteOpen} open={deleteOpen} />
+    <LinkedWardFacilityStatusDialog
+      isPending={updateMutation.isPending}
+      nextStatus={nextStatus}
+      onConfirm={confirmToggleStatus}
+      onOpenChange={setStatusConfirmOpen}
+      open={statusConfirmOpen}
+      scope="facility"
+      wardName={facility.ward.name}
+    />
   </div>
 }

@@ -51,7 +51,9 @@ export function BatchUploadWardsDialog({
   const [dragActive, setDragActive] = useState(false)
   const uploadMutation = useUploadWardsBatch()
   const result = uploadMutation.data
-  const totalProcessed = result ? result.created + result.failed : 0
+  const totalProcessed = result
+    ? result.created + result.skipped + result.failed
+    : 0
 
   function resetDialog() {
     setFile(null)
@@ -217,6 +219,9 @@ export function BatchUploadWardsDialog({
                     <span className="mt-1 block text-sm text-muted-foreground">
                       or click to browse CSV or Excel files up to 2 MB
                     </span>
+                    <span className="mt-2 block text-xs text-muted-foreground">
+                      Required columns: name, lga. Optional: code. Imported wards are created as inactive.
+                    </span>
                   </span>
                   <input
                     accept=".csv,.xlsx,.xls"
@@ -298,12 +303,17 @@ export function BatchUploadWardsDialog({
                   <span className="font-semibold">Import complete</span>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                   {[
                     {
                       label: 'Created',
                       value: result.created,
                       valueClass: 'text-success-foreground',
+                    },
+                    {
+                      label: 'Skipped',
+                      value: result.skipped,
+                      valueClass: 'text-muted-foreground',
                     },
                     {
                       label: 'Failed',

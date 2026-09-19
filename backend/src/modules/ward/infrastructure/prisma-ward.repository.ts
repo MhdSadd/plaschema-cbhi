@@ -1,4 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import {
+  decodeLgaNameAscCursor,
+  encodeLgaNameAscCursor,
+  lgaNameAscCursorWhere,
+} from '../../../platform/http/list-cursor';
 import { toQueryInt } from '../../../platform/http/query-transforms';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
 import { WARD_STATE, type Ward, type WardDetailAggregates, type WardListItem } from '../domain/ward';
@@ -6,7 +11,6 @@ import {
   lastNMonthsInLagos,
   monthKeyInLagos,
   startOfMonthInLagos,
-  startOfTodayInLagos,
 } from '../domain/ward-date';
 import type {
   CreateWardInput,
@@ -89,6 +93,9 @@ export class PrismaWardRepository implements WardRepository {
     const limit = toQueryInt(query.limit, 50, { min: 1, max: 100 });
     const filterWhere = {
       ...(query.status ? { status: query.status } : {}),
+      ...(query.lga
+        ? { lga: { equals: query.lga, mode: 'insensitive' as const } }
+        : {}),
       ...(query.search
         ? {
             OR: [
@@ -114,9 +121,12 @@ export class PrismaWardRepository implements WardRepository {
           }
         : {}),
     };
+    const decodedCursor = query.cursor
+      ? decodeLgaNameAscCursor(query.cursor)
+      : null;
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
+      ...(decodedCursor ? lgaNameAscCursorWhere(decodedCursor) : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -124,7 +134,7 @@ export class PrismaWardRepository implements WardRepository {
       this.prisma.ward.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'desc' },
+        orderBy: [{ lga: 'asc' }, { name: 'asc' }, { id: 'asc' }],
         include: {
           _count: {
             select: {
@@ -139,24 +149,6 @@ export class PrismaWardRepository implements WardRepository {
     ]);
 
     const pageRows = rows.length > limit ? rows.slice(0, limit) : rows;
-    const wardIds = pageRows.map((row) => row.id);
-    const todayStart = startOfTodayInLagos();
-
-    const newEnrollmentGroups =
-      wardIds.length === 0
-        ? []
-        : await this.prisma.enrollment.groupBy({
-            by: ['wardId'],
-            where: {
-              wardId: { in: wardIds },
-              createdAt: { gte: todayStart },
-            },
-            _count: { _all: true },
-          });
-
-    const newEnrollmentsByWard = new Map(
-      newEnrollmentGroups.map((group) => [group.wardId, group._count._all]),
-    );
 
     const items: WardListItem[] = pageRows.map((row) => ({
       id: row.id,
@@ -166,20 +158,57 @@ export class PrismaWardRepository implements WardRepository {
       lga: row.lga,
       fieldWorkers: row._count.assignments,
       beneficiaries: row._count.enrollments,
-      newEnrollments: newEnrollmentsByWard.get(row.id) ?? 0,
       status: row.status,
     }));
 
     const hasMore = rows.length > limit;
-    const last = items[items.length - 1];
+    const lastRow = pageRows[pageRows.length - 1];
+
+    const summary = await this.buildWardListSummary(
+      filterWhere,
+      query.status,
+      total,
+    );
 
     return {
       items,
-      nextCursor: hasMore && last ? last.id : null,
+      nextCursor:
+        hasMore && lastRow
+          ? encodeLgaNameAscCursor({
+              lga: lastRow.lga,
+              name: lastRow.name,
+              id: lastRow.id,
+            })
+          : null,
       hasMore,
       limit,
       total,
+      summary,
     };
+  }
+
+  private async buildWardListSummary(
+    filterWhere: Record<string, unknown>,
+    statusFilter: WardListItem['status'] | undefined,
+    total: number,
+  ) {
+    const activePromise =
+      statusFilter === 'inactive'
+        ? Promise.resolve(0)
+        : statusFilter === 'active'
+          ? Promise.resolve(total)
+          : this.prisma.ward.count({
+              where: { ...filterWhere, status: 'active' },
+            });
+
+    const [active, totalBeneficiaries] = await Promise.all([
+      activePromise,
+      this.prisma.enrollment.count({
+        where: { ward: filterWhere },
+      }),
+    ]);
+
+    return { active, totalBeneficiaries };
   }
 
   async *stream(

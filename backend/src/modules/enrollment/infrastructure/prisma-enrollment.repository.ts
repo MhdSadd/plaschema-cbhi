@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { buildCursorPage } from '../../../platform/http/cursor-pagination';
+import {
+  createdAtDescCursorWhere,
+  decodeCreatedAtDescCursor,
+  encodeCreatedAtDescCursor,
+} from '../../../platform/http/list-cursor';
 import { toQueryInt } from '../../../platform/http/query-transforms';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
 import type {
@@ -172,6 +177,16 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
     return row ? this.map(row) : null;
   }
 
+  async findByPublicEnrollmentId(
+    enrollmentId: string,
+  ): Promise<Enrollment | null> {
+    const row = await this.prisma.enrollment.findUnique({
+      where: { enrollmentId },
+      include: this.include,
+    });
+    return row ? this.map(row) : null;
+  }
+
   async findByIdempotencyId(
     idempotencyId: string,
   ): Promise<Enrollment | null> {
@@ -331,9 +346,12 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
     const limit = toQueryInt(query.limit, 50, { min: 1, max: 100 });
 
     const filterWhere = buildEnrollmentListWhere(query);
+    const decodedCursor = query.cursor
+      ? decodeCreatedAtDescCursor(query.cursor)
+      : null;
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
+      ...(decodedCursor ? createdAtDescCursorWhere(decodedCursor) : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -341,16 +359,27 @@ export class PrismaEnrollmentRepository implements EnrollmentRepository {
       this.prisma.enrollment.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'desc' },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         include: this.include,
       }),
     ]);
 
-    return buildCursorPage(
+    const page = buildCursorPage(
       rows.map((row) => this.mapListItem(row)),
       limit,
       total,
     );
+    const lastRow = (rows.length > limit ? rows.slice(0, limit) : rows).at(-1);
+    return {
+      ...page,
+      nextCursor:
+        page.hasMore && lastRow
+          ? encodeCreatedAtDescCursor({
+              createdAt: lastRow.createdAt,
+              id: lastRow.id,
+            })
+          : null,
+    };
   }
 
   async *iterateForExport(

@@ -4,11 +4,13 @@ import { normalizePlaceName } from '../../../shared/text';
 import type { WardStatus } from '../domain/ward';
 import { deriveWardCodeBase, resolveUniqueWardCode } from '../domain/ward-code';
 import { WARD_REPOSITORY, type WardRepository } from './ward.repository';
+import { WardFacilityStatusSyncService } from './ward-facility-status-sync.service';
 
 @Injectable()
 export class UpdateWardUseCase {
   constructor(
     @Inject(WARD_REPOSITORY) private readonly wards: WardRepository,
+    private readonly wardFacilityStatusSync: WardFacilityStatusSyncService,
   ) {}
 
   async execute(
@@ -58,6 +60,13 @@ export class UpdateWardUseCase {
         const existingCode = await this.wards.findByCode(candidate);
         return existingCode !== null && existingCode.id !== id;
       });
+    }
+
+    if (
+      input.status !== undefined &&
+      input.status !== existing.status
+    ) {
+      await this.wardFacilityStatusSync.apply(id, input.status);
     }
 
     return this.wards.update(id, {

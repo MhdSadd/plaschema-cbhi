@@ -15,8 +15,8 @@ describe('capitation tiers', () => {
 
   it('resolves default tier boundaries', () => {
     expect(resolveCapitationAmount(1, DEFAULT_CAPITATION_TIERS)).toBe(650_000);
-    expect(resolveCapitationAmount(4999, DEFAULT_CAPITATION_TIERS)).toBe(650_000);
-    expect(resolveCapitationAmount(5000, DEFAULT_CAPITATION_TIERS)).toBe(830_000);
+    expect(resolveCapitationAmount(5000, DEFAULT_CAPITATION_TIERS)).toBe(650_000);
+    expect(resolveCapitationAmount(5001, DEFAULT_CAPITATION_TIERS)).toBe(830_000);
     expect(resolveCapitationAmount(10_000, DEFAULT_CAPITATION_TIERS)).toBe(830_000);
     expect(resolveCapitationAmount(10_001, DEFAULT_CAPITATION_TIERS)).toBe(1_000_000);
   });

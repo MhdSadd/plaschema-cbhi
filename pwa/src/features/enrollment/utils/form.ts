@@ -3,7 +3,7 @@ import type { EnrollmentFormValues, FieldWorkerDetailStats, LocalEnrollmentRecor
 export const BENEFICIARY_CATEGORIES = [
   'Elderly 65 and above',
   'Indigent (very poor) / others',
-  'Internal displaced persons',
+  'IDP',
   'Orphan',
   'People Living with Disability',
   'Pregnant Woman',

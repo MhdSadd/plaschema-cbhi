@@ -7,7 +7,7 @@ export type IdDocumentType = 'nin' | 'national_id' | 'voters_card' | 'drivers_li
 export type BeneficiaryCategory =
   | 'Elderly 65 and above'
   | 'Indigent (very poor) / others'
-  | 'Internal displaced persons'
+  | 'IDP'
   | 'Orphan'
   | 'People Living with Disability'
   | 'Pregnant Woman'

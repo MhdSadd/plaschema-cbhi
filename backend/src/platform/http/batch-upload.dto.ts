@@ -12,6 +12,12 @@ export class BatchUploadResultDto {
   @ApiProperty({ example: 10 })
   created!: number;
 
+  @ApiProperty({
+    example: 2,
+    description: 'Rows that already existed and were not changed',
+  })
+  skipped!: number;
+
   @ApiProperty({ example: 1 })
   failed!: number;
 

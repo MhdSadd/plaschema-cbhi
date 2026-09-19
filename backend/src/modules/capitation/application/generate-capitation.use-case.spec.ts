@@ -43,7 +43,7 @@ describe('GenerateCapitationUseCase', () => {
         beneficiaryCount: 2,
         amount: 650_000,
         tierMin: 1,
-        tierMax: 4999,
+        tierMax: 5000,
         tierAmount: 650_000,
         tierLabel: '1 – 4,999',
         rate: null,

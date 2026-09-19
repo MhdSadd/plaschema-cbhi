@@ -71,8 +71,8 @@ Clean Architecture only (no DDD / bounded contexts). Feature modules:
 - `POST /api/users/:id/reset-password` (admin only; no email)
 - `GET /api/users` — cursor list; with `role=field_worker` returns wards + enrollment stats (`beneficiariesEnrolled`, `lastEnrollmentAt`, `lastSyncedAt`)
 - `GET /api/users/:id/detail` — field worker detail for admin **or the worker’s own profile** (`fieldWorker` overview with `lastSyncedAt`, `stats` with `totalEnrolled` / `enrollmentsToday` / `enrollmentsThisMonth`, `wards`, unified `activityLog`). Field workers may only request their own `id`. Beneficiaries tab uses `GET /api/enrollments?enrolledByUserId=`
-- `POST /api/wards/batch` — CSV or Excel (.xlsx/.xls); columns: `name,lga` and optional `code` (when present, used as-is after normalization; otherwise derived as `<LGA_3>-<NAME_3>` using an existing LGA prefix when wards already exist in that LGA)
-- `GET /api/wards` — cursor list for wards table (`code`, `name`, `state`, `lga`, `fieldWorkers`, `beneficiaries`, `newEnrollments`, `status`)
+- `POST /api/wards/batch` — CSV or Excel (.xlsx/.xls); columns: `name,lga` and optional `code` (when present, used as-is after normalization; otherwise derived as `<LGA_3>-<NAME_3>` using an existing LGA prefix when wards already exist in that LGA). New wards default to **inactive**; activate individually or via `PATCH`.
+- `GET /api/wards` — cursor list for wards table (`code`, `name`, `state`, `lga`, `fieldWorkers`, `beneficiaries`, `status`); filters: `search`, `lga`, `status`; response includes `meta.total` and `summary` (`active`, `totalBeneficiaries`) scoped to filters
 - `GET /api/wards/:id/detail` — admin ward detail page payload (`ward`, `stats`, `enrollmentTrend`, `fieldWorkers`, `healthFacilities`, unified `activityLog`). Beneficiaries tab uses `GET /api/enrollments?wardId=`
 - `PUT /api/wards/:id/field-workers` — assign multiple field workers to a ward (`fieldWorkerIds[]`; replaces existing assignments for that ward; returns `{ message }`)
 - `GET /api/wards/stream` — NDJSON stream for offline/mobile cache sync (`updatedSince` optional)
@@ -85,7 +85,7 @@ Clean Architecture only (no DDD / bounded contexts). Feature modules:
 - `GET /api/capitations` — list latest-run records for a month/year (defaults to current Lagos period). Filters: `lga`, `healthFacilityId`, `search`. Returns `{ data, meta, summary }`
 - `POST /api/enrollments/files/presign-upload` — Railway presigned PUT URL for passport/ID upload
 - `POST /api/enrollments/files/dev-upload` — **dev/test only**: multipart upload that presigns + PUTs to Railway (returns `objectKey`)
-- `POST /api/household-enrollments` — create household head or member (enrollment body plus `household` context). Head gets a global year counter ID; members receive `{baseEnrollmentId}-{NN}` with server-assigned `memberSequence`. Idempotent via `idempotencyId`; `409 HOUSEHOLD_HEAD_NOT_SYNCED` when members arrive before the head.
+- `POST /api/household-enrollments` — create household head or member (enrollment body plus `household` context). Head **enrollment ID** is `PL-CBHI-{householdCode}` (e.g. `PL-CBHI-BSA-BAK-0001`); members receive `{headEnrollmentId}-{NN}` (e.g. `PL-CBHI-BSA-BAK-0001-01`) with server-assigned `memberSequence`. Idempotent via `idempotencyId`; `409 HOUSEHOLD_HEAD_NOT_SYNCED` when members arrive before the head; `409 ENROLLMENT_ID_TAKEN` when the head ID already exists.
 - `GET /api/households` — cursor list of households for field workers (filters: `wardId`, `search`, `householdCode`)
 - `GET /api/households/code-counters` — highest household code suffix per assigned ward for offline counter sync (`field_worker` only; returns `lastSuffix` such as `001`)
 - `GET /api/households/:id` — household detail with head and member summaries

@@ -187,7 +187,14 @@ export function WardDetailView({ wardId }: WardDetailViewProps) {
         {tab === 'Activity Log' && <div className={`overflow-hidden rounded-xl bg-card ${cardShadow}`}><ActivityList entries={activityLog} /></div>}
       </section>
 
-      {editOpen && <EditWardDialog onOpenChange={setEditOpen} open ward={ward} />}
+      {editOpen && (
+        <EditWardDialog
+          linkedFacilityCount={healthFacilities.length}
+          onOpenChange={setEditOpen}
+          open
+          ward={ward}
+        />
+      )}
       {assignmentOpen && <AssignFieldWorkersDialog currentWorkers={fieldWorkers} onOpenChange={setAssignmentOpen} open wardId={ward.id} wardName={ward.name} />}
       <DeleteWardDialog onDeleted={() => navigate('/admin/wards')} onOpenChange={setDeleteOpen} open={deleteOpen} wardId={ward.id} wardName={ward.name} />
     </div>

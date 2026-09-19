@@ -113,7 +113,7 @@ export class BatchCreateWardsUseCase {
         id: createUuidV7(),
         name,
         lga,
-        status: 'active',
+        status: 'inactive',
         row: rowNumber,
         explicitCode,
       });
@@ -121,18 +121,30 @@ export class BatchCreateWardsUseCase {
 
     const candidates = [...pendingByName.values()];
     const uniqueLgas = [...new Set(candidates.map((ward) => ward.lga))];
-    const [existingByName, takenCodes, existingInLgas] = await Promise.all([
-      this.wards.findByNames(candidates.map((ward) => ward.name)),
-      this.wards.listCodes(),
-      Promise.all(
-        uniqueLgas.map(async (lga) => ({
-          lga,
-          ward: await this.wards.findOneByLga(lga),
-        })),
+    const explicitCodes = [
+      ...new Set(
+        candidates
+          .map((ward) => ward.explicitCode)
+          .filter((code): code is string => Boolean(code)),
       ),
-    ]);
-    const existingNames = new Set(
-      existingByName.map((ward) => ward.name.toLowerCase()),
+    ];
+    const [existingByName, existingByCode, takenCodes, existingInLgas] =
+      await Promise.all([
+        this.wards.findByNames(candidates.map((ward) => ward.name)),
+        this.wards.findByCodes(explicitCodes),
+        this.wards.listCodes(),
+        Promise.all(
+          uniqueLgas.map(async (lga) => ({
+            lga,
+            ward: await this.wards.findOneByLga(lga),
+          })),
+        ),
+      ]);
+    const existingWardByName = new Map(
+      existingByName.map((ward) => [ward.name.toLowerCase(), ward]),
+    );
+    const existingWardByCode = new Map(
+      existingByCode.map((ward) => [ward.code.toLowerCase(), ward]),
     );
     const reservedCodes = new Set(
       takenCodes.map((code) => code.toLowerCase()),
@@ -148,18 +160,35 @@ export class BatchCreateWardsUseCase {
     }
 
     const toCreate: CreateWardInput[] = [];
+    let skipped = 0;
     for (const candidate of candidates) {
-      if (existingNames.has(candidate.name.toLowerCase())) {
-        errors.push({
-          row: candidate.row,
-          message: `Ward already exists: ${candidate.name}`,
-        });
+      const existingNameMatch = existingWardByName.get(
+        candidate.name.toLowerCase(),
+      );
+      if (existingNameMatch) {
+        skipped += 1;
         continue;
       }
 
       let code: string;
       if (candidate.explicitCode) {
         const codeKey = candidate.explicitCode.toLowerCase();
+        const existingCodeMatch = existingWardByCode.get(codeKey);
+        if (existingCodeMatch) {
+          if (
+            existingCodeMatch.name.toLowerCase() ===
+              candidate.name.toLowerCase() &&
+            existingCodeMatch.lga.toLowerCase() === candidate.lga.toLowerCase()
+          ) {
+            skipped += 1;
+            continue;
+          }
+          errors.push({
+            row: candidate.row,
+            message: `Ward code already exists: ${candidate.explicitCode}`,
+          });
+          continue;
+        }
         if (reservedCodes.has(codeKey)) {
           errors.push({
             row: candidate.row,
@@ -196,6 +225,7 @@ export class BatchCreateWardsUseCase {
 
     return {
       created,
+      skipped,
       failed: errors.length,
       errors,
     };

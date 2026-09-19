@@ -103,11 +103,26 @@ export class ListWardsQueryDto {
   @MaxLength(120)
   search?: string;
 
+  @ApiPropertyOptional({ example: 'Jos South' })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  lga?: string;
+
   @ApiPropertyOptional({ enum: WARD_STATUSES })
   @EmptyStringToUndefined()
   @IsOptional()
   @IsEnum(WARD_STATUSES)
   status?: WardStatus;
+}
+
+export class WardListSummaryDto {
+  @ApiProperty({ example: 120 })
+  active!: number;
+
+  @ApiProperty({ example: 890 })
+  totalBeneficiaries!: number;
 }
 
 export class StreamWardsQueryDto {
@@ -143,13 +158,6 @@ export class WardListItemDto {
 
   @ApiProperty({ example: 412 })
   beneficiaries!: number;
-
-  @ApiProperty({
-    example: 48,
-    description:
-      'Enrollments created today (Africa/Lagos calendar day). UI may prefix with +.',
-  })
-  newEnrollments!: number;
 
   @ApiProperty({ enum: WARD_STATUSES, example: 'active' })
   status!: WardStatus;

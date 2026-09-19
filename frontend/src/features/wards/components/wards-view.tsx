@@ -6,6 +6,7 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { btnPrimary, btnSecondary, cardShadow, searchBar, tabGroup, tdCell, thCell } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PLATEAU_LGAS } from '@/lib/geography'
 
 import { useWards } from '../hooks'
 import type { WardStatus } from '../types'
@@ -24,6 +25,7 @@ export function WardsView() {
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [lga, setLga] = useState('')
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [cursors, setCursors] = useState<Array<string | undefined>>([undefined])
   const [pageIndex, setPageIndex] = useState(0)
@@ -43,16 +45,27 @@ export function WardsView() {
     cursor: cursors[pageIndex],
     limit: 50,
     search: debouncedSearch || undefined,
+    lga: lga || undefined,
     status: statusFilter === 'all' ? undefined : statusFilter,
   })
   const wards = wardsQuery.data?.items ?? []
   const meta = wardsQuery.data?.meta
   const totalCount = meta?.total ?? wards.length
+  const activeCount =
+    wardsQuery.data?.summary?.active
+    ?? wards.filter((ward) => ward.status === 'active').length
+  const beneficiaryCount =
+    wardsQuery.data?.summary?.totalBeneficiaries
+    ?? wards.reduce((total, ward) => total + ward.beneficiaries, 0)
+
+  function resetPage() {
+    setCursors([undefined])
+    setPageIndex(0)
+  }
 
   function changeStatus(nextStatus: StatusFilter) {
     setStatusFilter(nextStatus)
-    setCursors([undefined])
-    setPageIndex(0)
+    resetPage()
   }
 
   function goNext() {
@@ -69,7 +82,10 @@ export function WardsView() {
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-[-0.48px] text-foreground">Wards</h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-[-0.48px] text-foreground">Wards</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">Manage programme wards and local coverage.</p>
+        </div>
         <div className="flex gap-2">
           <button className={btnSecondary} onClick={() => setModal('upload')} type="button">
             <Upload aria-hidden="true" className="size-4" /> Upload File
@@ -90,8 +106,25 @@ export function WardsView() {
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className={searchBar} style={{ flex: '1 1 0', maxWidth: '300px' }}>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {[
+          { label: 'Wards', value: totalCount.toLocaleString() },
+          { label: 'Active', value: activeCount.toLocaleString() },
+          { label: 'Beneficiaries', value: beneficiaryCount.toLocaleString() },
+        ].map((item) => (
+          <div className={`flex flex-col gap-1 rounded-xl bg-card p-5 ${cardShadow}`} key={item.label}>
+            <p className="text-xs font-medium text-muted-foreground">{item.label}</p>
+            {wardsQuery.isPending ? (
+              <Skeleton className="mt-1 h-8 w-24" />
+            ) : (
+              <p className="text-[28px] font-semibold tracking-[-0.56px]">{item.value}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap items-end gap-3">
+        <div className={searchBar} style={{ flex: '1 1 0', maxWidth: '280px' }}>
           <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 16 16" width="16">
             <circle cx="7" cy="7" r="4.5" stroke="currentColor" strokeWidth="1.5" />
             <path d="M10.5 10.5L13 13" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
@@ -99,6 +132,25 @@ export function WardsView() {
           <input aria-label="Search wards" className="flex-1 bg-transparent text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground" maxLength={120} onChange={(event) => setSearch(event.target.value)} placeholder="Search wards..." value={search} />
           {wardsQuery.isFetching && <LoaderCircle aria-label="Updating wards" className="size-4 animate-spin text-muted-foreground" />}
         </div>
+        <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+          LGA
+          <select
+            aria-label="Filter wards by LGA"
+            className="h-10 rounded-lg border border-border bg-card px-3 text-sm font-normal text-foreground"
+            onChange={(event) => {
+              setLga(event.target.value)
+              resetPage()
+            }}
+            value={lga}
+          >
+            <option value="">All LGAs</option>
+            {PLATEAU_LGAS.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </label>
         <div className={tabGroup}>
           {(['all', 'active', 'inactive'] as const).map((status) => (
             <button aria-pressed={statusFilter === status} className={`h-10 rounded-full px-4 text-xs font-semibold capitalize tracking-[0.24px] transition-colors ${statusFilter === status ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted'}`} key={status} onClick={() => changeStatus(status)} type="button">
@@ -123,31 +175,28 @@ export function WardsView() {
             <table className="w-full">
               <thead>
                 <tr>
-                  <th className={`${thCell} w-10`}><span aria-hidden="true" className="block size-5 rounded-sm border border-border bg-card" /></th>
-                  {['Ward Name', 'State', 'LGA', 'Enrollment Officers', 'Beneficiaries', 'New Enrollments', 'Status', 'View'].map((heading) => <th className={thCell} key={heading}>{heading}</th>)}
+                  {['Ward Name', 'State', 'LGA', 'Enrollment Officers', 'Beneficiaries', 'Status', 'View'].map((heading) => <th className={thCell} key={heading}>{heading}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {wardsQuery.isPending
                   ? Array.from({ length: 6 }, (_, index) => (
                       <tr key={index}>
-                        {Array.from({ length: 9 }, (__, cellIndex) => <td className={tdCell} key={cellIndex}><Skeleton className="h-5 w-full" /></td>)}
+                        {Array.from({ length: 7 }, (__, cellIndex) => <td className={tdCell} key={cellIndex}><Skeleton className="h-5 w-full" /></td>)}
                       </tr>
                     ))
                   : wards.map((ward) => (
                       <tr className="transition-colors hover:bg-muted/40" key={ward.id}>
-                        <td className={tdCell}><span aria-hidden="true" className="block size-5 rounded-sm border border-border bg-card" /></td>
                         <td className={`${tdCell} font-semibold`}><button className="text-left hover:text-primary-foreground" onClick={() => navigate(`/admin/wards/${ward.id}`)} type="button">{ward.name}</button></td>
                         <td className={`${tdCell} text-muted-foreground`}>{ward.state}</td>
                         <td className={`${tdCell} text-muted-foreground`}>{ward.lga}</td>
                         <td className={tdCell}>{ward.fieldWorkers}</td>
                         <td className={`${tdCell} font-semibold`}>{ward.beneficiaries.toLocaleString()}</td>
-                        <td className={`${tdCell} font-semibold text-success-foreground`}>+{ward.newEnrollments}</td>
                         <td className={tdCell}><StatusBadge status={statusLabel(ward.status)} /></td>
                         <td className={tdCell}><button aria-label={`View ${ward.name}`} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => navigate(`/admin/wards/${ward.id}`)} type="button"><Eye aria-hidden="true" className="size-4" /></button></td>
                       </tr>
                     ))}
-                {!wardsQuery.isPending && wards.length === 0 && <tr><td className="px-6 py-14 text-center text-sm text-muted-foreground" colSpan={9}>No wards match your search and filter.</td></tr>}
+                {!wardsQuery.isPending && wards.length === 0 && <tr><td className="px-6 py-14 text-center text-sm text-muted-foreground" colSpan={7}>No wards match your search and filter.</td></tr>}
               </tbody>
             </table>
           </div>

@@ -20,7 +20,7 @@ describe('GetEnrollmentDetailUseCase', () => {
     idempotencyId: '01900000-0000-7000-8000-000000000002',
     capturedAt: new Date('2026-08-29T08:00:00.000Z'),
     status: 'active' as const,
-    category: 'Internal displaced persons',
+    category: 'IDP',
     enrolledByUserId: '01900000-0000-7000-8000-000000000003',
     wardId: '01900000-0000-7000-8000-000000000004',
     healthFacilityId: '01900000-0000-7000-8000-000000000005',

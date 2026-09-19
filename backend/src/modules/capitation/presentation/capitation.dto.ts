@@ -31,7 +31,7 @@ export class CapitationTierDto {
   minEnrollees!: number;
 
   @ApiPropertyOptional({
-    example: 4999,
+    example: 5000,
     nullable: true,
     description: 'Inclusive upper bound; null means open-ended (last tier only)',
   })
@@ -91,7 +91,7 @@ export class CapitationPeriodQueryDto {
     type: String,
     description: 'JSON array of capitation tiers; defaults to server configuration',
     example:
-      '[{"minEnrollees":1,"maxEnrollees":4999,"amount":650000},{"minEnrollees":5000,"maxEnrollees":10000,"amount":830000},{"minEnrollees":10001,"maxEnrollees":null,"amount":1000000}]',
+      '[{"minEnrollees":1,"maxEnrollees":5000,"amount":650000},{"minEnrollees":5001,"maxEnrollees":10000,"amount":830000},{"minEnrollees":10001,"maxEnrollees":null,"amount":1000000}]',
   })
   @Transform(({ value }) => parseTiersQuery(value))
   @IsOptional()

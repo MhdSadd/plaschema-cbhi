@@ -13,6 +13,7 @@ import {
   HEALTH_FACILITY_REPOSITORY,
   type HealthFacilityRepository,
 } from './health-facility.repository';
+import { WardFacilityStatusSyncService } from '../../ward/application/ward-facility-status-sync.service';
 
 @Injectable()
 export class UpdateHealthFacilityUseCase {
@@ -20,6 +21,7 @@ export class UpdateHealthFacilityUseCase {
     @Inject(HEALTH_FACILITY_REPOSITORY)
     private readonly facilities: HealthFacilityRepository,
     @Inject(WARD_REPOSITORY) private readonly wards: WardRepository,
+    private readonly wardFacilityStatusSync: WardFacilityStatusSyncService,
   ) {}
 
   async execute(
@@ -73,6 +75,13 @@ export class UpdateHealthFacilityUseCase {
           409,
         );
       }
+    }
+
+    if (
+      input.status !== undefined &&
+      input.status !== existing.status
+    ) {
+      await this.wardFacilityStatusSync.apply(nextWardId, input.status);
     }
 
     return this.facilities.update(id, {

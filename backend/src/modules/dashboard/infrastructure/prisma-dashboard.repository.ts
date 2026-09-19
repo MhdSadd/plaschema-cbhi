@@ -68,10 +68,12 @@ export class PrismaDashboardRepository implements DashboardRepository {
       previousActiveCreated,
       previousInactiveCreated,
       previousTotalCreated,
+      totalWards,
+      activeWards,
+      wardsCreatedInPeriod,
+      wardsCreatedPrevious,
       totalFacilities,
       activeFacilities,
-      facilitiesCreatedInPeriod,
-      facilitiesCreatedPrevious,
       fieldWorkerScopeStats,
       categoryRows,
       statusRows,
@@ -102,14 +104,16 @@ export class PrismaDashboardRepository implements DashboardRepository {
         where: { ...previousCreated, status: 'disabled' },
       }),
       this.prisma.enrollment.count({ where: previousCreated }),
-      this.countFacilities(query, undefined),
-      this.countFacilities(query, 'active'),
-      this.countFacilitiesCreated(query, window.start, window.end),
-      this.countFacilitiesCreated(
+      this.countWards(query, undefined),
+      this.countWards(query, 'active'),
+      this.countWardsCreated(query, window.start, window.end),
+      this.countWardsCreated(
         query,
         window.previousStart,
         window.previousEnd,
       ),
+      this.countFacilities(query, undefined),
+      this.countFacilities(query, 'active'),
       this.loadFieldWorkerScope(query, window),
       this.prisma.enrollment.groupBy({
         by: ['category'],
@@ -217,14 +221,22 @@ export class PrismaDashboardRepository implements DashboardRepository {
           });
     const wardById = new Map(wards.map((ward) => [ward.id, ward]));
 
-    const enrollmentByWard = wardGroups.map((row) => {
-      const ward = wardById.get(row.wardId);
-      return {
-        wardId: row.wardId,
-        name: ward?.name ?? 'Unknown ward',
-        count: row._count._all,
-      };
-    });
+    const enrollmentByWard = wardGroups
+      .map((row) => {
+        const ward = wardById.get(row.wardId);
+        return {
+          wardId: row.wardId,
+          name: ward?.name ?? 'Unknown ward',
+          lga: ward?.lga ?? '',
+          count: row._count._all,
+        };
+      })
+      .sort((a, b) => {
+        const byLga = a.lga.localeCompare(b.lga);
+        if (byLga !== 0) return byLga;
+        return a.name.localeCompare(b.name);
+      })
+      .map(({ wardId, name, count }) => ({ wardId, name, count }));
 
     const lgaTotals = new Map<string, number>();
     for (const row of lgaGroups) {
@@ -234,16 +246,24 @@ export class PrismaDashboardRepository implements DashboardRepository {
     }
     const enrollmentByLga = [...lgaTotals.entries()]
       .map(([lga, count]) => ({ lga, count }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => a.lga.localeCompare(b.lga));
 
-    const householdByWard = householdWardGroups.map((row) => {
-      const ward = wardById.get(row.wardId);
-      return {
-        wardId: row.wardId,
-        name: ward?.name ?? 'Unknown ward',
-        count: row._count._all,
-      };
-    });
+    const householdByWard = householdWardGroups
+      .map((row) => {
+        const ward = wardById.get(row.wardId);
+        return {
+          wardId: row.wardId,
+          name: ward?.name ?? 'Unknown ward',
+          lga: ward?.lga ?? '',
+          count: row._count._all,
+        };
+      })
+      .sort((a, b) => {
+        const byLga = a.lga.localeCompare(b.lga);
+        if (byLga !== 0) return byLga;
+        return a.name.localeCompare(b.name);
+      })
+      .map(({ wardId, name, count }) => ({ wardId, name, count }));
 
     const householdLgaTotals = new Map<string, number>();
     for (const row of householdLgaGroups) {
@@ -256,7 +276,7 @@ export class PrismaDashboardRepository implements DashboardRepository {
     }
     const householdByLga = [...householdLgaTotals.entries()]
       .map(([lga, count]) => ({ lga, count }))
-      .sort((a, b) => b.count - a.count);
+      .sort((a, b) => a.lga.localeCompare(b.lga));
 
     const householdSizeBreakdown = HOUSEHOLD_SIZE_BUCKETS.map((bucket) => ({
       label: bucket.label,
@@ -417,10 +437,10 @@ export class PrismaDashboardRepository implements DashboardRepository {
           value: newHouseholds,
           changePercent: percentChange(newHouseholds, previousNewHouseholds),
         },
-        totalFacilities: {
-          value: totalFacilities,
-          changeAbsolute:
-            facilitiesCreatedInPeriod - facilitiesCreatedPrevious,
+        totalWards: {
+          value: totalWards,
+          active: activeWards,
+          changeAbsolute: wardsCreatedInPeriod - wardsCreatedPrevious,
         },
         fieldWorkers: {
           value: fieldWorkerScopeStats.total,
@@ -518,6 +538,41 @@ export class PrismaDashboardRepository implements DashboardRepository {
     return {};
   }
 
+  private wardWhere(
+    query: DashboardQuery,
+    status?: 'active' | 'inactive',
+  ): Prisma.WardWhereInput {
+    return {
+      ...(status ? { status } : {}),
+      ...(query.wardId ? { id: query.wardId } : {}),
+      ...(query.lga && !query.wardId
+        ? { lga: { equals: query.lga, mode: 'insensitive' } }
+        : {}),
+    };
+  }
+
+  private countWards(
+    query: DashboardQuery,
+    status?: 'active' | 'inactive',
+  ): Promise<number> {
+    return this.prisma.ward.count({
+      where: this.wardWhere(query, status),
+    });
+  }
+
+  private countWardsCreated(
+    query: DashboardQuery,
+    from: Date,
+    to: Date,
+  ): Promise<number> {
+    return this.prisma.ward.count({
+      where: {
+        ...this.wardWhere(query),
+        createdAt: { gte: from, lte: to },
+      },
+    });
+  }
+
   private facilityWhere(
     query: DashboardQuery,
     status?: 'active' | 'inactive',
@@ -535,19 +590,6 @@ export class PrismaDashboardRepository implements DashboardRepository {
   ): Promise<number> {
     return this.prisma.healthFacility.count({
       where: this.facilityWhere(query, status),
-    });
-  }
-
-  private countFacilitiesCreated(
-    query: DashboardQuery,
-    from: Date,
-    to: Date,
-  ): Promise<number> {
-    return this.prisma.healthFacility.count({
-      where: {
-        ...this.facilityWhere(query),
-        createdAt: { gte: from, lte: to },
-      },
     });
   }
 

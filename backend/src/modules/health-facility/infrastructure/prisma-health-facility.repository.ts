@@ -1,4 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import {
+  decodeLgaNameAscCursor,
+  encodeLgaNameAscCursor,
+  healthFacilityLgaNameAscCursorWhere,
+} from '../../../platform/http/list-cursor';
 import { toQueryInt } from '../../../platform/http/query-transforms';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
 import type {
@@ -145,9 +150,14 @@ export class PrismaHealthFacilityRepository
           }
         : {}),
     };
+    const decodedCursor = query.cursor
+      ? decodeLgaNameAscCursor(query.cursor)
+      : null;
     const where = {
       ...filterWhere,
-      ...(query.cursor ? { id: { lt: query.cursor } } : {}),
+      ...(decodedCursor
+        ? healthFacilityLgaNameAscCursorWhere(decodedCursor)
+        : {}),
     };
 
     const [total, rows] = await Promise.all([
@@ -155,7 +165,11 @@ export class PrismaHealthFacilityRepository
       this.prisma.healthFacility.findMany({
         where,
         take: limit + 1,
-        orderBy: { id: 'desc' },
+        orderBy: [
+          { ward: { lga: 'asc' } },
+          { name: 'asc' },
+          { id: 'asc' },
+        ],
         include: {
           ...this.include,
           _count: { select: { enrollments: true } },
@@ -175,7 +189,7 @@ export class PrismaHealthFacilityRepository
     }));
 
     const hasMore = rows.length > limit;
-    const last = items[items.length - 1];
+    const lastRow = pageRows[pageRows.length - 1];
 
     const summary = await this.buildFacilityListSummary(
       filterWhere,
@@ -185,7 +199,14 @@ export class PrismaHealthFacilityRepository
 
     return {
       items,
-      nextCursor: hasMore && last ? last.id : null,
+      nextCursor:
+        hasMore && lastRow
+          ? encodeLgaNameAscCursor({
+              lga: lastRow.ward.lga,
+              name: lastRow.name,
+              id: lastRow.id,
+            })
+          : null,
       hasMore,
       limit,
       total,

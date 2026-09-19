@@ -2,7 +2,13 @@ import type {
   CursorListQuery,
   CursorPage,
 } from '../../../platform/http/cursor-pagination';
-import type { Ward, WardDetailAggregates, WardListItem, WardStatus } from '../domain/ward';
+import type {
+  Ward,
+  WardDetailAggregates,
+  WardListItem,
+  WardListSummary,
+  WardStatus,
+} from '../domain/ward';
 
 export const WARD_REPOSITORY = Symbol('WARD_REPOSITORY');
 
@@ -23,10 +29,13 @@ export type UpdateWardInput = {
 
 export type ListWardsQuery = CursorListQuery & {
   search?: string;
+  lga?: string;
   status?: WardStatus;
 };
 
-export type PaginatedWards = CursorPage<WardListItem>;
+export type PaginatedWards = CursorPage<WardListItem> & {
+  summary?: WardListSummary;
+};
 
 export type StreamWardsQuery = {
   batchSize: number;

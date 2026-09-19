@@ -21,6 +21,7 @@ export type {
   WardListItemApi,
   WardListParams,
   WardListResult,
+  WardListSummary,
   WardRecord,
   WardStatus,
 } from './ward.types'

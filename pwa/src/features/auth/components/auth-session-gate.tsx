@@ -51,7 +51,7 @@ export function AuthSessionGate({ children }: PropsWithChildren) {
       </main>
     )
   }
-
+  // Error handling
   if (sessionQuery.isError) {
     return (
       <main className="app-frame flex min-h-dvh items-center justify-center bg-neutral-50 p-6">

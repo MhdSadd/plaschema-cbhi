@@ -19,12 +19,18 @@ export function useWardDetail(id: string) {
   })
 }
 
-export function useWardOptions(search: string) {
+export function useWardOptions(search: string, lga?: string, enabled = true) {
   return useInfiniteQuery({
-    queryKey: wardKeys.options(search),
+    queryKey: wardKeys.options(search, lga),
+    enabled,
     initialPageParam: undefined as string | undefined,
     queryFn: ({ pageParam }) =>
-      fetchWards({ cursor: pageParam, limit: 100, search: search || undefined }),
+      fetchWards({
+        cursor: pageParam,
+        limit: 100,
+        search: search || undefined,
+        lga: lga || undefined,
+      }),
     getNextPageParam: (lastPage) =>
       lastPage.meta.hasMore ? (lastPage.meta.nextCursor ?? undefined) : undefined,
   })

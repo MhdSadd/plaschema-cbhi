@@ -35,6 +35,7 @@ import {
 } from '../../enrollment/domain/enrollment-identity';
 import { fieldWorkerCanAccessWard } from '../../enrollment/application/field-worker-ward-access';
 import { PassportPrintService } from '../../enrollment/application/passport-print.service';
+import { headEnrollmentIdFromHouseholdCode } from '../../enrollment/domain/enrollment-id';
 import type { HouseholdRole } from '../domain/household';
 import {
   HOUSEHOLD_REPOSITORY,
@@ -131,9 +132,29 @@ export class CreateHouseholdEnrollmentUseCase {
       );
     }
 
-    const enrollmentId = await this.enrollments.allocateEnrollmentId(
-      new Date().getFullYear(),
+    let enrollmentId: string;
+    try {
+      enrollmentId = headEnrollmentIdFromHouseholdCode(
+        input.household.householdCode,
+      );
+    } catch (error) {
+      throw new AppError(
+        'VALIDATION_ERROR',
+        error instanceof Error ? error.message : 'Invalid householdCode',
+        400,
+      );
+    }
+
+    const enrollmentIdTaken = await this.enrollments.findByPublicEnrollmentId(
+      enrollmentId,
     );
+    if (enrollmentIdTaken) {
+      throw new AppError(
+        'ENROLLMENT_ID_TAKEN',
+        'This enrollment ID is already in use',
+        409,
+      );
+    }
 
     try {
       const result = await this.households.createHeadEnrollment({

@@ -10,6 +10,7 @@ import { GetWardUseCase } from './application/get-ward.use-case';
 import { ListWardsUseCase } from './application/list-wards.use-case';
 import { StreamWardsUseCase } from './application/stream-wards.use-case';
 import { UpdateWardUseCase } from './application/update-ward.use-case';
+import { WardFacilityStatusSyncService } from './application/ward-facility-status-sync.service';
 import { WARD_REPOSITORY } from './application/ward.repository';
 import { PrismaWardRepository } from './infrastructure/prisma-ward.repository';
 import { WardController } from './presentation/ward.controller';
@@ -28,7 +29,8 @@ import { WardController } from './presentation/ward.controller';
     AssignWardFieldWorkersUseCase,
     UpdateWardUseCase,
     DeleteWardUseCase,
+    WardFacilityStatusSyncService,
   ],
-  exports: [WARD_REPOSITORY],
+  exports: [WARD_REPOSITORY, WardFacilityStatusSyncService],
 })
 export class WardModule {}

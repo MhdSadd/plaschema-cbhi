@@ -4,6 +4,7 @@ import { AppError } from '../../../platform/http/app-error';
 import { createUuidV7 } from '../../../platform/ids/uuid-v7';
 import { toTitleCase } from '../../../shared/text';
 import {
+  assertAssignedWardsSingleLga,
   assertUserRoleConstraints,
   type UserRole,
   type UserStatus,
@@ -31,12 +32,13 @@ export class CreateUserUseCase {
         phone: input.phone,
         assignedWardIds: input.assignedWardIds,
       });
-    } catch {
-      throw new AppError(
-        'VALIDATION_ERROR',
-        'Phone is required for field workers',
-        400,
-      );
+    } catch (error) {
+      const message =
+        error instanceof Error &&
+        error.message === 'INVALID_FIELD_WORKER_PHONE'
+          ? 'Field worker phone must be an 11-digit number'
+          : 'Phone is required for field workers';
+      throw new AppError('VALIDATION_ERROR', message, 400);
     }
 
     const email = input.email.toLowerCase().trim();
@@ -58,6 +60,16 @@ export class CreateUserUseCase {
         throw new AppError(
           'WARD_NOT_FOUND',
           'One or more assigned wards do not exist',
+          400,
+        );
+      }
+      const lgas = await this.users.findLgasForWardIds(assignedWardIds);
+      try {
+        assertAssignedWardsSingleLga(lgas);
+      } catch {
+        throw new AppError(
+          'VALIDATION_ERROR',
+          'Assigned wards must belong to a single LGA',
           400,
         );
       }

@@ -1,6 +1,7 @@
 import {
   formatEnrollmentId,
   formatHouseholdMemberEnrollmentId,
+  headEnrollmentIdFromHouseholdCode,
 } from './enrollment-id';
 
 describe('formatEnrollmentId', () => {
@@ -11,13 +12,27 @@ describe('formatEnrollmentId', () => {
   });
 });
 
+describe('headEnrollmentIdFromHouseholdCode', () => {
+  it('prefixes the trimmed household code with PL-CBHI-', () => {
+    expect(headEnrollmentIdFromHouseholdCode('  BSA-BAK-0001  ')).toBe(
+      'PL-CBHI-BSA-BAK-0001',
+    );
+  });
+
+  it('does not double-prefix when the client already sent PL-CBHI-', () => {
+    expect(headEnrollmentIdFromHouseholdCode('PL-CBHI-BSA-BAK-0001')).toBe(
+      'PL-CBHI-BSA-BAK-0001',
+    );
+  });
+});
+
 describe('formatHouseholdMemberEnrollmentId', () => {
   it('appends a two-digit member suffix to the head enrollment ID', () => {
     expect(
-      formatHouseholdMemberEnrollmentId('PL/CBHI/2026/010', 1),
-    ).toBe('PL/CBHI/2026/010-01');
+      formatHouseholdMemberEnrollmentId('PL-CBHI-BSA-BAK-0001', 1),
+    ).toBe('PL-CBHI-BSA-BAK-0001-01');
     expect(
-      formatHouseholdMemberEnrollmentId('PL/CBHI/2026/010', 12),
-    ).toBe('PL/CBHI/2026/010-12');
+      formatHouseholdMemberEnrollmentId('PL-CBHI-BSA-BAK-0001', 12),
+    ).toBe('PL-CBHI-BSA-BAK-0001-12');
   });
 });

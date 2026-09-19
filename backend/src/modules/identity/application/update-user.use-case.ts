@@ -2,7 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { hash } from 'bcryptjs';
 import { AppError } from '../../../platform/http/app-error';
 import { toTitleCase } from '../../../shared/text';
-import { assertUserRoleConstraints, type UserStatus } from '../domain/user';
+import {
+  assertAssignedWardsSingleLga,
+  assertUserRoleConstraints,
+  type UserStatus,
+} from '../domain/user';
 import { USER_REPOSITORY, type UserRepository } from './user.repository';
 
 @Injectable()
@@ -38,12 +42,13 @@ export class UpdateUserUseCase {
         phone: nextPhone,
         assignedWardIds: nextWardIds,
       });
-    } catch {
-      throw new AppError(
-        'VALIDATION_ERROR',
-        'Phone is required for field workers',
-        400,
-      );
+    } catch (error) {
+      const message =
+        error instanceof Error &&
+        error.message === 'INVALID_FIELD_WORKER_PHONE'
+          ? 'Field worker phone must be an 11-digit number'
+          : 'Phone is required for field workers';
+      throw new AppError('VALIDATION_ERROR', message, 400);
     }
 
     if (existing.role === 'admin' && input.assignedWardIds !== undefined) {
@@ -61,6 +66,16 @@ export class UpdateUserUseCase {
         throw new AppError(
           'WARD_NOT_FOUND',
           'One or more assigned wards do not exist',
+          400,
+        );
+      }
+      const lgas = await this.users.findLgasForWardIds(assignedWardIds);
+      try {
+        assertAssignedWardsSingleLga(lgas);
+      } catch {
+        throw new AppError(
+          'VALIDATION_ERROR',
+          'Assigned wards must belong to a single LGA',
           400,
         );
       }

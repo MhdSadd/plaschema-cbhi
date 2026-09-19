@@ -98,16 +98,14 @@ export class BatchCreateHealthFacilitiesUseCase {
     });
 
     const toCreate: CreateHealthFacilityInput[] = [];
+    let skipped = 0;
     for (const candidate of pending.values()) {
       const existing = await this.facilities.findByNameAndWard(
         candidate.name,
         candidate.wardId,
       );
       if (existing) {
-        errors.push({
-          row: candidate.row,
-          message: `Health facility already exists in ward: ${candidate.name}`,
-        });
+        skipped += 1;
         continue;
       }
       toCreate.push({
@@ -125,6 +123,7 @@ export class BatchCreateHealthFacilitiesUseCase {
 
     return {
       created,
+      skipped,
       failed: errors.length,
       errors,
     };

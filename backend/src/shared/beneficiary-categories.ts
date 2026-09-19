@@ -1,7 +1,7 @@
 export const BENEFICIARY_CATEGORIES = [
   'Elderly 65 and above',
   'Indigent (very poor) / others',
-  'Internal displaced persons',
+  'IDP',
   'Orphan',
   'People Living with Disability',
   'Pregnant Woman',
@@ -14,7 +14,8 @@ export const LEGACY_BENEFICIARY_CATEGORY_ALIASES: Record<
   string,
   BeneficiaryCategory
 > = {
-  IDPs: 'Internal displaced persons',
+  IDPs: 'IDP',
+  'Internal displaced persons': 'IDP',
   'Elderly 65+': 'Elderly 65 and above',
   'Indigents / Very Poor / Others': 'Indigent (very poor) / others',
 };

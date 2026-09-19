@@ -10,7 +10,7 @@ describe('ReportLastSyncUseCase', () => {
     passwordHash: 'hash',
     role: 'field_worker' as const,
     status: 'active' as const,
-    phone: '+2348034567890',
+    phone: '08034567890',
     lastSyncedAt: null as Date | null,
     isPasswordChangeRequired: false,
     assignedWards: [{ id: 'ward-1', name: 'Vom Central', lga: 'Jos South' }],

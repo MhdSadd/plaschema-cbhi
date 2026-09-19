@@ -27,6 +27,10 @@ export interface DashboardAbsoluteKpi {
   changeAbsolute: number
 }
 
+export interface DashboardWardsKpi extends DashboardAbsoluteKpi {
+  active: number
+}
+
 export interface DashboardTrendPoint {
   key: string
   label: string
@@ -102,7 +106,7 @@ export interface DashboardOverview {
     newEnrollments: DashboardPercentKpi
     totalHouseholds: DashboardPercentKpi
     newHouseholds: DashboardPercentKpi
-    totalFacilities: DashboardAbsoluteKpi
+    totalWards: DashboardWardsKpi
     fieldWorkers: DashboardAbsoluteKpi
   }
   householdOverview: {

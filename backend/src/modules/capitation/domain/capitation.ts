@@ -27,8 +27,8 @@ export type CapitationTier = {
 };
 
 export const DEFAULT_CAPITATION_TIERS: CapitationTier[] = [
-  { minEnrollees: 1, maxEnrollees: 4999, amount: 650_000 },
-  { minEnrollees: 5000, maxEnrollees: 10_000, amount: 830_000 },
+  { minEnrollees: 1, maxEnrollees: 5000, amount: 650_000 },
+  { minEnrollees: 5001, maxEnrollees: 10_000, amount: 830_000 },
   { minEnrollees: 10_001, maxEnrollees: null, amount: 1_000_000 },
 ];
 

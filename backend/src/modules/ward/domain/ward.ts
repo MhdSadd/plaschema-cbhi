@@ -24,9 +24,12 @@ export type WardListItem = {
   lga: string;
   fieldWorkers: number;
   beneficiaries: number;
-  /** Enrollments created on the current calendar day (Africa/Lagos). */
-  newEnrollments: number;
   status: WardStatus;
+};
+
+export type WardListSummary = {
+  active: number;
+  totalBeneficiaries: number;
 };
 
 export type WardDetailStats = {
