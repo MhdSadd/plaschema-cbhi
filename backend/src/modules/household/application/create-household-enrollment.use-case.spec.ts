@@ -56,7 +56,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
 
   const enrollmentFixture = (overrides: Partial<Enrollment> = {}): Enrollment => ({
     id: '01900000-0000-7000-8000-000000000001',
-    enrollmentId: 'JOS-VOM-001',
+    enrollmentId: 'PL-CBHI-JOS-VOM-001',
     idempotencyId: headIdempotencyId,
     capturedAt: new Date('2026-09-09T10:00:00.000Z'),
     status: 'pending',
@@ -226,7 +226,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
 
     const result = await useCase.execute(actor, baseInput);
 
-    expect(result.enrollmentId).toBe('JOS-VOM-001');
+    expect(result.enrollmentId).toBe('PL-CBHI-JOS-VOM-001');
     expect(households.createHeadEnrollment).toHaveBeenCalled();
     expect(recordActivity.execute).toHaveBeenCalled();
   });

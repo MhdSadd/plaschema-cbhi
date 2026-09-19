@@ -11,18 +11,24 @@ export function formatEnrollmentId(year: number, sequence: number): string {
   return `PL/CBHI/${year}/${String(sequence).padStart(3, '0')}`;
 }
 
+export const HOUSEHOLD_HEAD_ENROLLMENT_ID_PREFIX = 'PL-CBHI-';
+
 /**
- * Head enrollment ID is the client-allocated household code (e.g. BAR-TAF-001).
+ * Head enrollment ID: PL-CBHI-{client household code}, e.g. PL-CBHI-BSA-BAK-0001.
  */
 export function headEnrollmentIdFromHouseholdCode(householdCode: string): string {
   const normalized = householdCode.trim();
   if (normalized.length < 2) {
     throw new Error('householdCode must be at least 2 characters');
   }
-  return normalized;
+  const upper = normalized.toUpperCase();
+  if (upper.startsWith(HOUSEHOLD_HEAD_ENROLLMENT_ID_PREFIX)) {
+    return normalized;
+  }
+  return `${HOUSEHOLD_HEAD_ENROLLMENT_ID_PREFIX}${normalized}`;
 }
 
-/** Household member suffix on the head enrollment ID, e.g. BAR-TAF-001-01 */
+/** Household member suffix on the head enrollment ID, e.g. PL-CBHI-BSA-BAK-0001-01 */
 export function formatHouseholdMemberEnrollmentId(
   baseEnrollmentId: string,
   memberSequence: number,

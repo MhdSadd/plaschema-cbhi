@@ -92,9 +92,9 @@ Passport: JPEG/PNG/WebP. ID document: image or PDF. Max 5 MB each.
 | Concept | Client responsibility | Server responsibility |
 | --- | --- | --- |
 | `householdLocalId` | Generate once per household session (UUID v7) | Stores same value; links head and members |
-| `householdCode` | Allocate offline as `{wardCode}-{NNN}` (e.g. `JOS-VOM-001`) | Enforces uniqueness per ward; **head enrollment ID** equals this code |
-| Head | First person enrolled | Creates household row; `enrollmentId` = `householdCode`; stores same value in `baseEnrollmentId` |
-| Member | Additional people in same household | Assigns `memberSequence` and `{householdCode}-{NN}` enrollment ID (e.g. `JOS-VOM-001-01`) |
+| `householdCode` | Allocate offline (e.g. `BSA-BAK-0001`) | Enforces uniqueness per ward; server forms head ID as `PL-CBHI-{householdCode}` |
+| Head | First person enrolled | Creates household row; `enrollmentId` = `PL-CBHI-{householdCode}`; stores same in `baseEnrollmentId` |
+| Member | Additional people in same household | Assigns `memberSequence` and `{headEnrollmentId}-{NN}` (e.g. `PL-CBHI-BSA-BAK-0001-01`) |
 | Shared address | Head's residential address copied to members; stored on household | Persisted on household record at head create |
 
 Ward `code` comes from reference data (`GET /wards/stream`). Client increments a per-ward counter offline to produce `{wardCode}-001`, `{wardCode}-002`, etc.
@@ -215,7 +215,7 @@ For each pending record:
 ```json
 {
   "id": "uuid",
-  "enrollmentId": "JOS-VOM-001",
+  "enrollmentId": "PL-CBHI-JOS-VOM-001",
   "idempotencyId": "uuid-v7",
   "status": "pending",
   "capturedAt": "2026-09-10T08:15:00.000Z",
@@ -228,7 +228,7 @@ For each pending record:
 }
 ```
 
-Member example: `enrollmentId` = `JOS-VOM-001-02`, `householdRole` = `member`, `memberSequence` = `2`.
+Member example: `enrollmentId` = `PL-CBHI-JOS-VOM-001-02`, `householdRole` = `member`, `memberSequence` = `2`.
 
 After head sync succeeds, persist `householdId` on all pending member records for the same `householdLocalId`.
 
@@ -378,7 +378,7 @@ Add to the create body for `POST /household-enrollments`:
 | `sharedResidentialAddress` | Recommended (stored on household) | Omit |
 | `householdId` | Omit | Optional until head sync returns it; then include for late add |
 
-Member enrollment IDs are assigned server-side: `{householdCode}-{NN}` where `NN` is zero-padded `memberSequence` (e.g. `JOS-VOM-001-01`).
+Member enrollment IDs are assigned server-side: `{headEnrollmentId}-{NN}` where `NN` is zero-padded `memberSequence` (e.g. `PL-CBHI-BSA-BAK-0001-01`).
 
 ---
 

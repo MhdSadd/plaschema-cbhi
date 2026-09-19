@@ -85,7 +85,7 @@ Clean Architecture only (no DDD / bounded contexts). Feature modules:
 - `GET /api/capitations` — list latest-run records for a month/year (defaults to current Lagos period). Filters: `lga`, `healthFacilityId`, `search`. Returns `{ data, meta, summary }`
 - `POST /api/enrollments/files/presign-upload` — Railway presigned PUT URL for passport/ID upload
 - `POST /api/enrollments/files/dev-upload` — **dev/test only**: multipart upload that presigns + PUTs to Railway (returns `objectKey`)
-- `POST /api/household-enrollments` — create household head or member (enrollment body plus `household` context). Head **enrollment ID** equals client `householdCode`; members receive `{householdCode}-{NN}` (e.g. `BAR-TAF-001-01`) with server-assigned `memberSequence`. Idempotent via `idempotencyId`; `409 HOUSEHOLD_HEAD_NOT_SYNCED` when members arrive before the head; `409 ENROLLMENT_ID_TAKEN` when the head ID already exists.
+- `POST /api/household-enrollments` — create household head or member (enrollment body plus `household` context). Head **enrollment ID** is `PL-CBHI-{householdCode}` (e.g. `PL-CBHI-BSA-BAK-0001`); members receive `{headEnrollmentId}-{NN}` (e.g. `PL-CBHI-BSA-BAK-0001-01`) with server-assigned `memberSequence`. Idempotent via `idempotencyId`; `409 HOUSEHOLD_HEAD_NOT_SYNCED` when members arrive before the head; `409 ENROLLMENT_ID_TAKEN` when the head ID already exists.
 - `GET /api/households` — cursor list of households for field workers (filters: `wardId`, `search`, `householdCode`)
 - `GET /api/households/code-counters` — highest household code suffix per assigned ward for offline counter sync (`field_worker` only; returns `lastSuffix` such as `001`)
 - `GET /api/households/:id` — household detail with head and member summaries
