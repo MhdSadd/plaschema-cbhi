@@ -5,8 +5,19 @@ import { useState } from 'react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PLATEAU_LGAS } from '@/lib/geography'
 import type { WardListItem } from '@/features/wards/types'
-import type { UseInfiniteQueryResult } from '@tanstack/react-query'
+import type { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query'
 import type { WardListResult } from '@/features/wards/types'
+
+type WardOptionsInfiniteQuery = Pick<
+  UseInfiniteQueryResult<InfiniteData<WardListResult, unknown>, Error>,
+  | 'isPending'
+  | 'isFetching'
+  | 'isFetchingNextPage'
+  | 'hasNextPage'
+  | 'fetchNextPage'
+  | 'isError'
+  | 'refetch'
+>
 
 interface FieldWorkerWardAccessFieldsProps {
   lga: string
@@ -16,10 +27,7 @@ interface FieldWorkerWardAccessFieldsProps {
   selectedWardIds: string[]
   onToggleWard: (wardId: string, checked: boolean) => void
   wards: WardListItem[]
-  wardsQuery: Pick<
-    UseInfiniteQueryResult<WardListResult, Error>,
-    'isPending' | 'isFetching' | 'isFetchingNextPage' | 'hasNextPage' | 'fetchNextPage' | 'isError' | 'refetch'
-  >
+  wardsQuery: WardOptionsInfiniteQuery
   disabled?: boolean
   emptySelectionNote: string
 }

@@ -12,7 +12,6 @@ import { Input } from '@/components/ui/input'
 import { PLATEAU_LGAS } from '@/lib/geography'
 
 import { useCreateWard } from '../hooks/useWardMutations'
-import type { WardStatus } from '../types'
 
 interface CreateWardDialogProps {
   open: boolean
@@ -20,23 +19,23 @@ interface CreateWardDialogProps {
   onCreated: (wardName: string) => void
 }
 
-interface CreateWardFormValues {
-  name: string
-  lga: (typeof PLATEAU_LGAS)[number]
-  status: WardStatus
-}
-
-const plateauLgaEnum = PLATEAU_LGAS as unknown as [string, ...string[]]
-
 const createWardSchema = z.object({
   name: z
     .string()
     .trim()
     .min(2, 'Ward name must be at least 2 characters.')
     .max(120, 'Ward name must be 120 characters or fewer.'),
-  lga: z.enum(plateauLgaEnum, { message: 'Select an LGA.' }),
+  lga: z
+    .string()
+    .min(1, 'Select an LGA.')
+    .refine(
+      (value) => (PLATEAU_LGAS as readonly string[]).includes(value),
+      'Select an LGA.',
+    ),
   status: z.enum(['active', 'inactive']),
 })
+
+type CreateWardFormValues = z.infer<typeof createWardSchema>
 
 export function CreateWardDialog({
   open,
@@ -51,7 +50,7 @@ export function CreateWardDialog({
     formState: { errors },
   } = useForm<CreateWardFormValues>({
     resolver: zodResolver(createWardSchema),
-    defaultValues: { name: '', lga: '' as CreateWardFormValues['lga'], status: 'active' },
+    defaultValues: { name: '', lga: '', status: 'active' },
   })
 
   function handleDialogChange(nextOpen: boolean) {
