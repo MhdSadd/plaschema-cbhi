@@ -99,6 +99,7 @@ async function uploadPurpose(record: LocalEnrollmentRecord, purpose: 'passport' 
   const objectKeyField = purpose === 'passport' ? 'passportObjectKey' : 'idDocumentObjectKey'
   if (record[objectKeyField]) return record[objectKeyField]
   const fileId = purpose === 'passport' ? record.form.passportFileId : record.form.idDocumentFileId
+  if (purpose === 'id_document' && !fileId.trim()) return undefined
   const file = await offlineDb.files.get(fileId)
   if (!file) throw new Error(`${purpose === 'passport' ? 'Passport' : 'ID document'} file is missing from this device.`)
   await offlineDb.enrollments.update(record.localId, { uploadStage: purpose })
@@ -220,7 +221,11 @@ async function syncOne(record: LocalEnrollmentRecord) {
     if (!await claimRecord(record)) return false
     const passportObjectKey = await uploadPurpose(record, 'passport')
     const idDocumentObjectKey = await uploadPurpose({ ...record, passportObjectKey }, 'id_document')
-    const ready = { ...record, passportObjectKey, idDocumentObjectKey }
+    const ready = {
+      ...record,
+      passportObjectKey,
+      ...(idDocumentObjectKey ? { idDocumentObjectKey } : { idDocumentObjectKey: undefined }),
+    }
     await offlineDb.enrollments.update(record.localId, { syncStatus: 'submitting', uploadStage: 'enrollment' })
 
     const acknowledgement = await createHouseholdEnrollment(toCreateHouseholdEnrollmentPayload(ready))

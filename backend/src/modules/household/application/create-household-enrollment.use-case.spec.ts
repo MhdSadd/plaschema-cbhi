@@ -39,7 +39,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
     lastName: 'Ibrahim',
     dateOfBirth: '1985-03-15',
     phone: '08030000001',
-    nin: '1234567890',
+    nin: '12345678901',
     maritalStatus: 'married' as const,
     idType: 'nin' as const,
     lgaOfResidence: 'Jos South',
@@ -79,7 +79,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
     dateOfBirth: '1985-03-15',
     phone: '08030000001',
     email: null,
-    nin: '1234567890',
+    nin: '12345678901',
     maritalStatus: 'married',
     bloodGroup: null,
     genotype: null,
@@ -203,6 +203,40 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
 
     expect(result).toEqual({ ...existing, idempotentReplay: true });
     expect(households.createHeadEnrollment).not.toHaveBeenCalled();
+  });
+
+  it('creates a household head enrollment without an ID document upload', async () => {
+    mockHappyPath();
+    storage.exists.mockImplementation(async (key: string) => key === 'passport.jpg');
+    const created = enrollmentFixture({ idDocumentObjectKey: null });
+    households.createHeadEnrollment.mockResolvedValue({
+      household: {
+        id: '01900000-0000-7000-8000-000000000020',
+        householdLocalId,
+        householdCode: 'JOS-VOM-001',
+        wardId,
+        headEnrollmentId: created.id,
+        baseEnrollmentId: created.enrollmentId,
+        residentialAddress: 'Settlement Road, Vom',
+        memberCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      enrollment: created,
+    });
+
+    const { idDocumentObjectKey: _removed, ...withoutIdDoc } = baseInput;
+    const result = await useCase.execute(actor, withoutIdDoc);
+
+    expect(result.enrollmentId).toBe('PL-CBHI-JOS-VOM-001');
+    expect(storage.exists).toHaveBeenCalledTimes(1);
+    expect(households.createHeadEnrollment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        enrollment: expect.objectContaining({
+          idDocumentObjectKey: null,
+        }),
+      }),
+    );
   });
 
   it('creates a household head enrollment', async () => {

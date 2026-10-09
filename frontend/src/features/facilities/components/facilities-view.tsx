@@ -1,23 +1,34 @@
-import { ChevronLeft, ChevronRight, Eye, LoaderCircle, Plus, RefreshCw, Upload } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Eye, LoaderCircle, Plus, Power, PowerOff, RefreshCw, Upload } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
+import { BulkLinkedWardFacilityStatusDialog } from '@/components/admin/bulk-linked-ward-facility-status-dialog'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { SearchableFilterSelect } from '@/components/admin/searchable-filter-select'
 import { btnPrimary, btnSecondary, cardShadow, searchBar, tabGroup, tdCell, thCell } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWardOptions } from '@/features/wards/hooks'
 import type { WardListItem } from '@/features/wards/types'
 
-import { useHealthFacilities } from '../hooks'
-import type { HealthFacilityStatus } from '../types'
+import { useBulkUpdateHealthFacilityStatus, useHealthFacilities } from '../hooks'
+import type { HealthFacilityListItem, HealthFacilityStatus } from '../types'
 import { BatchUploadFacilitiesDialog } from './batch-upload-facilities-dialog'
 import { CreateFacilityDialog } from './create-facility-dialog'
 
 const PLATEAU_LGAS = ['Barkin Ladi', 'Bassa', 'Bokkos', 'Jos East', 'Jos North', 'Jos South', 'Kanam', 'Kanke', 'Langtang North', 'Langtang South', 'Mangu', 'Mikang', 'Pankshin', "Qua'an Pan", 'Riyom', 'Shendam', 'Wase']
 type StatusFilter = 'all' | HealthFacilityStatus
 type Modal = 'create' | 'upload' | null
+const MAX_BULK_SELECTION = 100
+
+type BulkStatusRequest = {
+  nextStatus: HealthFacilityStatus
+  facilityIds: string[]
+  selectionCount: number
+  uniqueWardCount: number
+}
 
 function statusLabel(status: HealthFacilityStatus) { return status === 'active' ? 'Active' : 'Inactive' }
 
@@ -32,6 +43,9 @@ export function FacilitiesView() {
   const [cursors, setCursors] = useState<Array<string | undefined>>([undefined])
   const [pageIndex, setPageIndex] = useState(0)
   const [modal, setModal] = useState<Modal>(null)
+  const [selected, setSelected] = useState<Map<string, HealthFacilityListItem>>(new Map())
+  const [bulkRequest, setBulkRequest] = useState<BulkStatusRequest | null>(null)
+  const bulkUpdate = useBulkUpdateHealthFacilityStatus()
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -64,6 +78,8 @@ export function FacilitiesView() {
     ?? facilities.filter((facility) => facility.status === 'active').length
   const beneficiaryCount = query.data?.summary?.totalBeneficiaries
     ?? facilities.reduce((total, facility) => total + facility.beneficiaries, 0)
+  const selectedOnPage = facilities.filter((facility) => selected.has(facility.id))
+  const allOnPageSelected = facilities.length > 0 && selectedOnPage.length === facilities.length
 
   function resetPage() { setCursors([undefined]); setPageIndex(0) }
   function nextPage() {
@@ -71,6 +87,67 @@ export function FacilitiesView() {
     if (!meta?.hasMore || !nextCursor) return
     setCursors((current) => { const next = current.slice(0, pageIndex + 1); next[pageIndex + 1] = nextCursor; return next })
     setPageIndex((current) => current + 1)
+  }
+
+  function toggle(facility: HealthFacilityListItem) {
+    setSelected((current) => {
+      const next = new Map(current)
+      if (next.has(facility.id)) next.delete(facility.id)
+      else if (next.size < MAX_BULK_SELECTION) next.set(facility.id, facility)
+      else toast.error(`You can update up to ${MAX_BULK_SELECTION} facilities at a time.`)
+      return next
+    })
+  }
+
+  function toggleCurrentPage() {
+    setSelected((current) => {
+      const next = new Map(current)
+      if (allOnPageSelected) {
+        for (const facility of facilities) next.delete(facility.id)
+        return next
+      }
+      const unselected = facilities.filter((facility) => !next.has(facility.id))
+      const available = MAX_BULK_SELECTION - next.size
+      for (const facility of unselected.slice(0, available)) next.set(facility.id, facility)
+      if (unselected.length > available) {
+        toast.error(`Only the first ${MAX_BULK_SELECTION} selected facilities were kept.`)
+      }
+      return next
+    })
+  }
+
+  function requestBulkStatus(nextStatus: HealthFacilityStatus) {
+    const targets = [...selected.values()].filter((facility) => facility.status !== nextStatus)
+    if (targets.length === 0) {
+      toast.info(
+        `Selected facilities are already ${nextStatus === 'active' ? 'active' : 'inactive'}.`,
+      )
+      return
+    }
+    const wardToFacility = new Map<string, string>()
+    for (const facility of targets) {
+      if (!wardToFacility.has(facility.ward.id)) wardToFacility.set(facility.ward.id, facility.id)
+    }
+    setBulkRequest({
+      nextStatus,
+      facilityIds: [...wardToFacility.values()],
+      selectionCount: targets.length,
+      uniqueWardCount: wardToFacility.size,
+    })
+  }
+
+  async function confirmBulkStatus() {
+    if (!bulkRequest) return
+    try {
+      await bulkUpdate.mutateAsync({
+        facilityIds: bulkRequest.facilityIds,
+        status: bulkRequest.nextStatus,
+      })
+      setSelected(new Map())
+      setBulkRequest(null)
+    } catch {
+      // Toast handled in mutation
+    }
   }
 
   return (
@@ -89,13 +166,46 @@ export function FacilitiesView() {
         <span className="ml-auto text-sm text-muted-foreground">{query.isPending ? 'Loading facilities…' : `Showing ${facilities.length} of ${totalCount.toLocaleString()} facilities`}</span>
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl bg-foreground px-4 py-3 text-background">
+          <div className="min-w-48 flex-1">
+            <p className="text-sm font-semibold">
+              {selected.size} of {MAX_BULK_SELECTION} facilities selected
+            </p>
+          </div>
+          <Button onClick={() => requestBulkStatus('active')} size="sm">
+            <Power aria-hidden="true" /> Activate selected
+          </Button>
+          <Button onClick={() => requestBulkStatus('inactive')} size="sm" variant="destructive">
+            <PowerOff aria-hidden="true" /> Deactivate selected
+          </Button>
+          <button
+            className="text-xs text-muted-foreground hover:text-background"
+            onClick={() => setSelected(new Map())}
+            type="button"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
+
       <div className={`overflow-hidden rounded-xl bg-card ${cardShadow}`}>
-        {query.isError && !query.data ? <div className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center" role="alert"><p className="font-semibold">Unable to load facilities.</p><p className="text-sm text-muted-foreground">Check your connection and try again.</p><Button onClick={() => void query.refetch()} variant="outline"><RefreshCw aria-hidden="true" /> Retry</Button></div> : <div className="overflow-x-auto"><table className="w-full"><thead><tr>{['Facility Name', 'Type', 'Level', 'Ward', 'LGA', 'Beneficiaries', 'Status', 'View'].map((heading) => <th className={thCell} key={heading}>{heading}</th>)}</tr></thead><tbody>{query.isPending ? Array.from({ length: 6 }, (_, row) => <tr key={row}>{Array.from({ length: 8 }, (__, cell) => <td className={tdCell} key={cell}><Skeleton className="h-5 w-full" /></td>)}</tr>) : facilities.map((facility) => <tr className="cursor-pointer hover:bg-muted/40" key={facility.id} onClick={() => navigate(`/admin/facilities/${facility.id}`)}><td className={`${tdCell} font-semibold`}>{facility.name}</td><td className={`${tdCell} text-muted-foreground`}>{facility.type}</td><td className={`${tdCell} capitalize text-muted-foreground`}>{facility.level}</td><td className={`${tdCell} text-muted-foreground`}>{facility.ward.name}</td><td className={`${tdCell} text-muted-foreground`}>{facility.ward.lga}</td><td className={`${tdCell} font-semibold`}>{facility.beneficiaries.toLocaleString()}</td><td className={tdCell}><StatusBadge status={statusLabel(facility.status)} /></td><td className={tdCell}><button aria-label={`View ${facility.name}`} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={(event) => { event.stopPropagation(); navigate(`/admin/facilities/${facility.id}`) }} type="button"><Eye aria-hidden="true" className="size-4" /></button></td></tr>)}{!query.isPending && facilities.length === 0 && <tr><td className="px-6 py-14 text-center text-sm text-muted-foreground" colSpan={8}>No facilities match your search and filters.</td></tr>}</tbody></table></div>}
+        {query.isError && !query.data ? <div className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center" role="alert"><p className="font-semibold">Unable to load facilities.</p><p className="text-sm text-muted-foreground">Check your connection and try again.</p><Button onClick={() => void query.refetch()} variant="outline"><RefreshCw aria-hidden="true" /> Retry</Button></div> : <div className="overflow-x-auto"><table className="w-full"><thead><tr><th className={`${thCell} w-12`}><Checkbox aria-label="Select current page" checked={allOnPageSelected ? true : selectedOnPage.length > 0 ? 'indeterminate' : false} disabled={facilities.length === 0} onCheckedChange={toggleCurrentPage} /></th>{['Facility Name', 'Type', 'Level', 'Ward', 'LGA', 'Beneficiaries', 'Status', 'View'].map((heading) => <th className={thCell} key={heading}>{heading}</th>)}</tr></thead><tbody>{query.isPending ? Array.from({ length: 6 }, (_, row) => <tr key={row}>{Array.from({ length: 9 }, (__, cell) => <td className={tdCell} key={cell}><Skeleton className="h-5 w-full" /></td>)}</tr>) : facilities.map((facility) => <tr className="cursor-pointer hover:bg-muted/40" key={facility.id} onClick={() => navigate(`/admin/facilities/${facility.id}`)}><td className={tdCell} onClick={(event) => event.stopPropagation()}><Checkbox aria-label={`Select ${facility.name}`} checked={selected.has(facility.id)} disabled={!selected.has(facility.id) && selected.size >= MAX_BULK_SELECTION} onCheckedChange={() => toggle(facility)} /></td><td className={`${tdCell} font-semibold`}>{facility.name}</td><td className={`${tdCell} text-muted-foreground`}>{facility.type}</td><td className={`${tdCell} capitalize text-muted-foreground`}>{facility.level}</td><td className={`${tdCell} text-muted-foreground`}>{facility.ward.name}</td><td className={`${tdCell} text-muted-foreground`}>{facility.ward.lga}</td><td className={`${tdCell} font-semibold`}>{facility.beneficiaries.toLocaleString()}</td><td className={tdCell}><StatusBadge status={statusLabel(facility.status)} /></td><td className={tdCell}><button aria-label={`View ${facility.name}`} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={(event) => { event.stopPropagation(); navigate(`/admin/facilities/${facility.id}`) }} type="button"><Eye aria-hidden="true" className="size-4" /></button></td></tr>)}{!query.isPending && facilities.length === 0 && <tr><td className="px-6 py-14 text-center text-sm text-muted-foreground" colSpan={9}>No facilities match your search and filters.</td></tr>}</tbody></table></div>}
         {!query.isError && <div className="flex items-center justify-between border-t border-border px-4 py-3"><p className="text-sm text-muted-foreground">Page {pageIndex + 1}</p><div className="flex gap-2"><Button disabled={pageIndex === 0 || query.isFetching} onClick={() => setPageIndex((current) => Math.max(0, current - 1))} variant="outline"><ChevronLeft aria-hidden="true" /> Previous</Button><Button disabled={!meta?.hasMore || !meta.nextCursor || query.isFetching} onClick={nextPage} variant="outline">Next <ChevronRight aria-hidden="true" /></Button></div></div>}
       </div>
 
       <CreateFacilityDialog onOpenChange={(open) => setModal(open ? 'create' : null)} open={modal === 'create'} />
       <BatchUploadFacilitiesDialog onOpenChange={(open) => setModal(open ? 'upload' : null)} open={modal === 'upload'} />
+      <BulkLinkedWardFacilityStatusDialog
+        isPending={bulkUpdate.isPending}
+        nextStatus={bulkRequest?.nextStatus ?? 'active'}
+        onConfirm={() => void confirmBulkStatus()}
+        onOpenChange={(open) => !open && setBulkRequest(null)}
+        open={bulkRequest !== null}
+        scope="facility"
+        selectionCount={bulkRequest?.selectionCount ?? 0}
+        uniqueWardCount={bulkRequest?.uniqueWardCount}
+      />
     </div>
   )
 }

@@ -37,5 +37,9 @@ export function buildFileJobTitle(input: {
     return `ID Cards (${count}) — ${timestamp}`;
   }
 
+  if (input.kind === 'field_worker_report') {
+    return `Enrollment Officers Report (${input.format.toUpperCase()}) — ${timestamp}`;
+  }
+
   return `Enrollment Report (${input.format}) — ${timestamp}`;
 }

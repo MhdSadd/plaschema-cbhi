@@ -18,7 +18,7 @@ function completeForm(): EnrollmentFormValues {
     category: 'IDP', passportFileId: 'passport-file', passportName: 'passport.jpg',
     idDocumentFileId: 'id-file', idDocumentName: 'id.pdf', title: 'mrs', firstName: 'Amina',
     lastName: 'Yusuf', gender: 'female', dateOfBirth: '1990-05-04', maritalStatus: 'married',
-    phone: '+2348012345678', nin: '1234567890', lgaOfResidence: 'Jos North', residentialAddress: '12 Test Road',
+    phone: '+2348012345678', nin: '12345678901', lgaOfResidence: 'Jos North', residentialAddress: '12 Test Road',
     wardId: '01900000-0000-7000-8000-000000000010', healthFacilityId: '01900000-0000-7000-8000-000000000020',
     idType: 'national_id',
   }
@@ -93,12 +93,12 @@ describe('offline enrollment storage', () => {
     expect(isValidPhoneNumber('0801234')).toBe(false)
   })
 
-  it('requires NIN to contain exactly 10 digits', () => {
-    expect(normalizeNin('12 34-ab56-7890')).toBe('1234567890')
-    expect(normalizeNin('123456789012')).toBe('1234567890')
+  it('requires NIN to contain exactly 11 digits', () => {
+    expect(normalizeNin('12 34-ab56-78901')).toBe('12345678901')
+    expect(normalizeNin('1234567890123')).toBe('12345678901')
     expect(isValidNin('')).toBe(false)
-    expect(isValidNin('1234567890')).toBe(true)
-    expect(isValidNin('123456789')).toBe(false)
+    expect(isValidNin('12345678901')).toBe(true)
+    expect(isValidNin('1234567890')).toBe(false)
   })
 
   it('automatically chooses only an unambiguous active facility for a ward', () => {

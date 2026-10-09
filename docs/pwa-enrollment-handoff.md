@@ -71,7 +71,7 @@ The model is **offline-first**:
 5. **Facility** — health facility for the selected ward
 6. **Review** — confirm and save locally
 
-Passport and ID files: images or PDF (ID only), max 5 MB each. State is fixed to `PLATEAU`; both phone fields require exactly 11 digits; optional NIN requires exactly 10 digits.
+Passport and ID files: images or PDF (ID only), max 5 MB each. State is fixed to `PLATEAU`; both phone fields require exactly 11 digits; optional NIN requires exactly 11 digits.
 
 ---
 

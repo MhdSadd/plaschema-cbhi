@@ -1,10 +1,17 @@
-export type FileJobKind = 'id_card' | 'enrollment_report';
+export type FileJobKind =
+  | 'id_card'
+  | 'enrollment_report'
+  | 'field_worker_report';
 
 export type FileJobFormat = 'pdf' | 'xlsx';
 
 export type FileJobStatus = 'queued' | 'processing' | 'failed' | 'completed';
 
-export const FILE_JOB_KINDS: FileJobKind[] = ['id_card', 'enrollment_report'];
+export const FILE_JOB_KINDS: FileJobKind[] = [
+  'id_card',
+  'enrollment_report',
+  'field_worker_report',
+];
 
 export const FILE_JOB_FORMATS: FileJobFormat[] = ['pdf', 'xlsx'];
 

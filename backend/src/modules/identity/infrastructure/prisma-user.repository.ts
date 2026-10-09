@@ -17,6 +17,7 @@ import type {
 import { toPublicUser } from '../domain/user';
 import { WARD_STATE } from '../../ward/domain/ward';
 import { startOfMonthInLagos, startOfTodayInLagos } from '../../ward/domain/ward-date';
+import type { ResolvedFieldWorkerListFilters } from '../domain/field-worker-list-filters';
 import type {
   CreateUserInput,
   ListUsersQuery,
@@ -24,6 +25,7 @@ import type {
   UpdateUserInput,
   UserRepository,
 } from '../application/user.repository';
+import { Prisma } from '../../../generated/prisma/client';
 
 type UserWithWards = {
   id: string;
@@ -112,34 +114,31 @@ export class PrismaUserRepository implements UserRepository {
 
   async list(query: ListUsersQuery): Promise<PaginatedUsers> {
     const limit = toQueryInt(query.limit, 50, { min: 1, max: 100 });
-    const filterWhere = {
-      ...(query.role ? { role: query.role } : {}),
-      ...(query.status ? { status: query.status } : {}),
-      ...(query.search
-        ? {
-            OR: [
-              {
-                name: {
-                  contains: query.search,
-                  mode: 'insensitive' as const,
-                },
-              },
-              {
-                email: {
-                  contains: query.search,
-                  mode: 'insensitive' as const,
-                },
-              },
-              {
-                phone: {
-                  contains: query.search,
-                  mode: 'insensitive' as const,
-                },
-              },
-            ],
-          }
-        : {}),
-    };
+    const filterWhere = await this.buildUserFilterWhere(
+      query.role,
+      query.status,
+      query.search,
+      query.fieldWorkerFilters,
+    );
+
+    if (
+      query.role === 'field_worker' &&
+      filterWhere.id &&
+      typeof filterWhere.id === 'object' &&
+      'in' in filterWhere.id &&
+      Array.isArray(filterWhere.id.in) &&
+      filterWhere.id.in.length === 0
+    ) {
+      return {
+        items: [],
+        nextCursor: null,
+        hasMore: false,
+        limit,
+        total: 0,
+        summary: { active: 0, totalBeneficiariesEnrolled: 0 },
+      };
+    }
+
     const decodedCursor = query.cursor
       ? decodeCreatedAtDescCursor(query.cursor)
       : null;
@@ -188,8 +187,159 @@ export class PrismaUserRepository implements UserRepository {
     };
   }
 
+  private async buildUserFilterWhere(
+    role: ListUsersQuery['role'],
+    status: UserStatus | undefined,
+    search: string | undefined,
+    fieldWorkerFilters?: ResolvedFieldWorkerListFilters,
+  ): Promise<Prisma.UserWhereInput> {
+    const filterWhere: Prisma.UserWhereInput = {
+      ...(role ? { role } : {}),
+      ...(status ? { status } : {}),
+      ...(search
+        ? {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    };
+
+    if (role !== 'field_worker' || !fieldWorkerFilters) {
+      return filterWhere;
+    }
+
+    if (fieldWorkerFilters.lastSyncedFrom || fieldWorkerFilters.lastSyncedTo) {
+      filterWhere.lastSyncedAt = {
+        ...(fieldWorkerFilters.lastSyncedFrom
+          ? { gte: fieldWorkerFilters.lastSyncedFrom }
+          : {}),
+        ...(fieldWorkerFilters.lastSyncedTo
+          ? { lte: fieldWorkerFilters.lastSyncedTo }
+          : {}),
+      };
+    }
+
+    const enrollmentStatUserIds =
+      fieldWorkerFilters.enrollmentStatUserIds === undefined
+        ? await this.findFieldWorkerIdsForEnrollmentStats(fieldWorkerFilters)
+        : fieldWorkerFilters.enrollmentStatUserIds;
+
+    if (enrollmentStatUserIds !== null) {
+      filterWhere.id = { in: enrollmentStatUserIds };
+    }
+
+    return filterWhere;
+  }
+
+  private async findFieldWorkerIdsForEnrollmentStats(
+    filters: ResolvedFieldWorkerListFilters,
+  ): Promise<string[]> {
+    const min = filters.beneficiariesEnrolledMin ?? 0;
+    const max = filters.beneficiariesEnrolledMax;
+
+    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>`
+      SELECT u.id
+      FROM "User" u
+      LEFT JOIN (
+        SELECT "enrolledByUserId", COUNT(*)::int AS enrolled_count, MAX("createdAt") AS last_enrollment
+        FROM "Enrollment"
+        GROUP BY "enrolledByUserId"
+      ) stats ON stats."enrolledByUserId" = u.id
+      WHERE u.role = 'field_worker'::"UserRole"
+        AND COALESCE(stats.enrolled_count, 0) >= ${min}
+        ${max != null ? Prisma.sql`AND COALESCE(stats.enrolled_count, 0) <= ${max}` : Prisma.empty}
+        ${
+          filters.lastEnrollmentFrom
+            ? Prisma.sql`AND stats.last_enrollment IS NOT NULL AND stats.last_enrollment >= ${filters.lastEnrollmentFrom}`
+            : Prisma.empty
+        }
+        ${
+          filters.lastEnrollmentTo
+            ? Prisma.sql`AND stats.last_enrollment IS NOT NULL AND stats.last_enrollment <= ${filters.lastEnrollmentTo}`
+            : Prisma.empty
+        }
+    `;
+
+    return rows.map((row) => row.id);
+  }
+
+  async *iterateFieldWorkersForExport(
+    filters: ResolvedFieldWorkerListFilters,
+  ): AsyncIterable<FieldWorkerListItem> {
+    const resolved: ResolvedFieldWorkerListFilters = {
+      ...filters,
+      enrollmentStatUserIds:
+        filters.enrollmentStatUserIds === null
+          ? null
+          : filters.enrollmentStatUserIds === undefined
+            ? await this.findFieldWorkerIdsForEnrollmentStats(filters)
+            : filters.enrollmentStatUserIds,
+    };
+
+    if (
+      resolved.enrollmentStatUserIds != null &&
+      resolved.enrollmentStatUserIds.length === 0
+    ) {
+      return;
+    }
+
+    const filterWhere = await this.buildUserFilterWhere(
+      'field_worker',
+      filters.status,
+      filters.search,
+      resolved,
+    );
+
+    const batchSize = 100;
+    let cursor: ReturnType<typeof decodeCreatedAtDescCursor> = null;
+
+    for (;;) {
+      const where: Prisma.UserWhereInput = {
+        ...filterWhere,
+        ...(cursor ? createdAtDescCursorWhere(cursor) : {}),
+      };
+
+      const rows = await this.prisma.user.findMany({
+        where,
+        take: batchSize + 1,
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        include: this.include,
+      });
+
+      if (rows.length === 0) {
+        return;
+      }
+
+      const page = await this.mapFieldWorkerPage(
+        rows,
+        batchSize,
+        rows.length,
+      );
+      for (const item of page.items) {
+        if ('beneficiariesEnrolled' in item) {
+          yield item;
+        }
+      }
+
+      if (!page.hasMore) {
+        return;
+      }
+
+      const lastRow = rows[Math.min(batchSize, rows.length) - 1];
+      cursor = decodeCreatedAtDescCursor(
+        encodeCreatedAtDescCursor({
+          createdAt: lastRow.createdAt,
+          id: lastRow.id,
+        }),
+      );
+    }
+  }
+
   private async buildFieldWorkerListSummary(
-    filterWhere: Record<string, unknown>,
+    filterWhere: Prisma.UserWhereInput,
     statusFilter: UserStatus | undefined,
     total: number,
   ) {
@@ -202,11 +352,19 @@ export class PrismaUserRepository implements UserRepository {
               where: { ...filterWhere, status: 'active' },
             });
 
+    const matchingUsers = await this.prisma.user.findMany({
+      where: filterWhere,
+      select: { id: true },
+    });
+    const userIds = matchingUsers.map((row) => row.id);
+
     const [active, totalBeneficiariesEnrolled] = await Promise.all([
       activePromise,
-      this.prisma.enrollment.count({
-        where: { enrolledBy: filterWhere },
-      }),
+      userIds.length === 0
+        ? Promise.resolve(0)
+        : this.prisma.enrollment.count({
+            where: { enrolledByUserId: { in: userIds } },
+          }),
     ]);
 
     return { active, totalBeneficiariesEnrolled };

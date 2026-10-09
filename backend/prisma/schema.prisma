@@ -115,6 +115,7 @@ enum ActivityAction {
 enum FileJobKind {
   id_card
   enrollment_report
+  field_worker_report
 }
 
 enum FileJobFormat {
@@ -296,7 +297,7 @@ model Enrollment {
   passportObjectKey   String
   /// JPEG variant resized for ID card printing (object storage key).
   passportPrintObjectKey String?
-  idDocumentObjectKey String
+  idDocumentObjectKey String?
 
   title      EnrollmentTitle
   gender     EnrollmentGender

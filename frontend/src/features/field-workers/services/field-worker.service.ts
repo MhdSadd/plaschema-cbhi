@@ -17,7 +17,9 @@ import type {
   ResetFieldWorkerPasswordResult,
   ResetFieldWorkerPasswordVariables,
   UpdateFieldWorkerVariables,
+  ExportFieldWorkerPayload,
 } from '../types'
+import type { CreateFileJobResult } from '@/features/enrollments/types/enrollment.types'
 
 type FieldWorkerListResponse = ApiResponse<
   FieldWorker[],
@@ -36,6 +38,12 @@ export async function fetchFieldWorkers(
     role: 'field_worker',
     search: params.search,
     status: params.status,
+    beneficiariesEnrolledMin: params.beneficiariesEnrolledMin,
+    beneficiariesEnrolledMax: params.beneficiariesEnrolledMax,
+    lastEnrollmentFrom: params.lastEnrollmentFrom,
+    lastEnrollmentTo: params.lastEnrollmentTo,
+    lastSyncedFrom: params.lastSyncedFrom,
+    lastSyncedTo: params.lastSyncedTo,
   })
 
   return {
@@ -82,6 +90,17 @@ export async function updateFieldWorker({
     ApiResponse<FieldWorkerUserRecord>,
     typeof payload
   >(`/users/${id}`, payload)
+  return response.data.data
+}
+
+/** POST /users/reports/export */
+export async function exportFieldWorkers(
+  payload: ExportFieldWorkerPayload,
+): Promise<CreateFileJobResult> {
+  const response = await _post<
+    ApiResponse<CreateFileJobResult>,
+    ExportFieldWorkerPayload
+  >('/users/reports/export', payload)
   return response.data.data
 }
 

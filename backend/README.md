@@ -69,7 +69,8 @@ Clean Architecture only (no DDD / bounded contexts). Feature modules:
 - `GET /api/auth/me` — authenticated profile (`assignedWards`, `lastSyncedAt`, …)
 - `POST /api/auth/sync` — report successful device sync (sets `lastSyncedAt` to now; returns updated user)
 - `POST /api/users/:id/reset-password` (admin only; no email)
-- `GET /api/users` — cursor list; with `role=field_worker` returns wards + enrollment stats (`beneficiariesEnrolled`, `lastEnrollmentAt`, `lastSyncedAt`)
+- `GET /api/users` — cursor list; with `role=field_worker` returns wards + enrollment stats (`beneficiariesEnrolled`, `lastEnrollmentAt`, `lastSyncedAt`); filters: `search`, `status`, `beneficiariesEnrolledMin`/`Max`, `lastEnrollmentFrom`/`To`, `lastSyncedFrom`/`To`
+- `POST /api/users/reports/export` — admin; enqueue async enrollment officer report (`format: xlsx`; same filters as the field-worker list). Poll/download via `/api/file-jobs`
 - `GET /api/users/:id/detail` — field worker detail for admin **or the worker’s own profile** (`fieldWorker` overview with `lastSyncedAt`, `stats` with `totalEnrolled` / `enrollmentsToday` / `enrollmentsThisMonth`, `wards`, unified `activityLog`). Field workers may only request their own `id`. Beneficiaries tab uses `GET /api/enrollments?enrolledByUserId=`
 - `POST /api/wards/batch` — CSV or Excel (.xlsx/.xls); columns: `name,lga` and optional `code` (when present, used as-is after normalization; otherwise derived as `<LGA_3>-<NAME_3>` using an existing LGA prefix when wards already exist in that LGA). New wards default to **inactive**; activate individually or via `PATCH`.
 - `GET /api/wards` — cursor list for wards table (`code`, `name`, `state`, `lga`, `fieldWorkers`, `beneficiaries`, `status`); filters: `search`, `lga`, `status`; response includes `meta.total` and `summary` (`active`, `totalBeneficiaries`) scoped to filters

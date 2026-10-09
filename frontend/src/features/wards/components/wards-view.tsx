@@ -1,20 +1,30 @@
-import { ChevronLeft, ChevronRight, CircleCheck, Eye, LoaderCircle, Plus, RefreshCw, Upload, X } from 'lucide-react'
+import { ChevronLeft, ChevronRight, CircleCheck, Eye, LoaderCircle, Plus, Power, PowerOff, RefreshCw, Upload, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
+import { BulkLinkedWardFacilityStatusDialog } from '@/components/admin/bulk-linked-ward-facility-status-dialog'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { btnPrimary, btnSecondary, cardShadow, searchBar, tabGroup, tdCell, thCell } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Skeleton } from '@/components/ui/skeleton'
 import { PLATEAU_LGAS } from '@/lib/geography'
 
-import { useWards } from '../hooks'
-import type { WardStatus } from '../types'
+import { useBulkUpdateWardStatus, useWards } from '../hooks'
+import type { WardListItem, WardStatus } from '../types'
 import { BatchUploadWardsDialog } from './batch-upload-wards-dialog'
 import { CreateWardDialog } from './create-ward-dialog'
 
 type ModalType = 'add' | 'upload' | null
 type StatusFilter = 'all' | WardStatus
+const MAX_BULK_SELECTION = 100
+
+type BulkStatusRequest = {
+  nextStatus: WardStatus
+  wardIds: string[]
+  selectionCount: number
+}
 
 function statusLabel(status: WardStatus) {
   return status === 'active' ? 'Active' : 'Inactive'
@@ -31,6 +41,9 @@ export function WardsView() {
   const [pageIndex, setPageIndex] = useState(0)
   const [modal, setModal] = useState<ModalType>(searchParams.get('action') === 'add' ? 'add' : null)
   const [created, setCreated] = useState<string | null>(null)
+  const [selected, setSelected] = useState<Map<string, WardListItem>>(new Map())
+  const [bulkRequest, setBulkRequest] = useState<BulkStatusRequest | null>(null)
+  const bulkUpdate = useBulkUpdateWardStatus()
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -57,6 +70,8 @@ export function WardsView() {
   const beneficiaryCount =
     wardsQuery.data?.summary?.totalBeneficiaries
     ?? wards.reduce((total, ward) => total + ward.beneficiaries, 0)
+  const selectedOnPage = wards.filter((ward) => selected.has(ward.id))
+  const allOnPageSelected = wards.length > 0 && selectedOnPage.length === wards.length
 
   function resetPage() {
     setCursors([undefined])
@@ -77,6 +92,64 @@ export function WardsView() {
       return next
     })
     setPageIndex((current) => current + 1)
+  }
+
+  function toggle(ward: WardListItem) {
+    setSelected((current) => {
+      const next = new Map(current)
+      if (next.has(ward.id)) next.delete(ward.id)
+      else if (next.size < MAX_BULK_SELECTION) next.set(ward.id, ward)
+      else toast.error(`You can update up to ${MAX_BULK_SELECTION} wards at a time.`)
+      return next
+    })
+  }
+
+  function toggleCurrentPage() {
+    setSelected((current) => {
+      const next = new Map(current)
+      if (allOnPageSelected) {
+        for (const ward of wards) next.delete(ward.id)
+        return next
+      }
+      const unselected = wards.filter((ward) => !next.has(ward.id))
+      const available = MAX_BULK_SELECTION - next.size
+      for (const ward of unselected.slice(0, available)) next.set(ward.id, ward)
+      if (unselected.length > available) {
+        toast.error(`Only the first ${MAX_BULK_SELECTION} selected wards were kept.`)
+      }
+      return next
+    })
+  }
+
+  function requestBulkStatus(nextStatus: WardStatus) {
+    const wardIds = [...selected.values()]
+      .filter((ward) => ward.status !== nextStatus)
+      .map((ward) => ward.id)
+    if (wardIds.length === 0) {
+      toast.info(
+        `Selected wards are already ${nextStatus === 'active' ? 'active' : 'inactive'}.`,
+      )
+      return
+    }
+    setBulkRequest({
+      nextStatus,
+      wardIds,
+      selectionCount: wardIds.length,
+    })
+  }
+
+  async function confirmBulkStatus() {
+    if (!bulkRequest) return
+    try {
+      await bulkUpdate.mutateAsync({
+        ids: bulkRequest.wardIds,
+        status: bulkRequest.nextStatus,
+      })
+      setSelected(new Map())
+      setBulkRequest(null)
+    } catch {
+      // Toast handled in mutation
+    }
   }
 
   return (
@@ -163,6 +236,29 @@ export function WardsView() {
         </div>
       </div>
 
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl bg-foreground px-4 py-3 text-background">
+          <div className="min-w-48 flex-1">
+            <p className="text-sm font-semibold">
+              {selected.size} of {MAX_BULK_SELECTION} wards selected
+            </p>
+          </div>
+          <Button onClick={() => requestBulkStatus('active')} size="sm">
+            <Power aria-hidden="true" /> Activate selected
+          </Button>
+          <Button onClick={() => requestBulkStatus('inactive')} size="sm" variant="destructive">
+            <PowerOff aria-hidden="true" /> Deactivate selected
+          </Button>
+          <button
+            className="text-xs text-muted-foreground hover:text-background"
+            onClick={() => setSelected(new Map())}
+            type="button"
+          >
+            Clear selection
+          </button>
+        </div>
+      )}
+
       <div className={`overflow-hidden rounded-xl bg-card ${cardShadow}`}>
         {wardsQuery.isError && !wardsQuery.data ? (
           <div className="flex min-h-64 flex-col items-center justify-center gap-3 p-6 text-center" role="alert">
@@ -175,6 +271,16 @@ export function WardsView() {
             <table className="w-full">
               <thead>
                 <tr>
+                  <th className={`${thCell} w-12`}>
+                    <Checkbox
+                      aria-label="Select current page"
+                      checked={
+                        allOnPageSelected ? true : selectedOnPage.length > 0 ? 'indeterminate' : false
+                      }
+                      disabled={wards.length === 0}
+                      onCheckedChange={toggleCurrentPage}
+                    />
+                  </th>
                   {['Ward Name', 'State', 'LGA', 'Enrollment Officers', 'Beneficiaries', 'Status', 'View'].map((heading) => <th className={thCell} key={heading}>{heading}</th>)}
                 </tr>
               </thead>
@@ -182,11 +288,19 @@ export function WardsView() {
                 {wardsQuery.isPending
                   ? Array.from({ length: 6 }, (_, index) => (
                       <tr key={index}>
-                        {Array.from({ length: 7 }, (__, cellIndex) => <td className={tdCell} key={cellIndex}><Skeleton className="h-5 w-full" /></td>)}
+                        {Array.from({ length: 8 }, (__, cellIndex) => <td className={tdCell} key={cellIndex}><Skeleton className="h-5 w-full" /></td>)}
                       </tr>
                     ))
                   : wards.map((ward) => (
                       <tr className="transition-colors hover:bg-muted/40" key={ward.id}>
+                        <td className={tdCell}>
+                          <Checkbox
+                            aria-label={`Select ${ward.name}`}
+                            checked={selected.has(ward.id)}
+                            disabled={!selected.has(ward.id) && selected.size >= MAX_BULK_SELECTION}
+                            onCheckedChange={() => toggle(ward)}
+                          />
+                        </td>
                         <td className={`${tdCell} font-semibold`}><button className="text-left hover:text-primary-foreground" onClick={() => navigate(`/admin/wards/${ward.id}`)} type="button">{ward.name}</button></td>
                         <td className={`${tdCell} text-muted-foreground`}>{ward.state}</td>
                         <td className={`${tdCell} text-muted-foreground`}>{ward.lga}</td>
@@ -196,7 +310,7 @@ export function WardsView() {
                         <td className={tdCell}><button aria-label={`View ${ward.name}`} className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" onClick={() => navigate(`/admin/wards/${ward.id}`)} type="button"><Eye aria-hidden="true" className="size-4" /></button></td>
                       </tr>
                     ))}
-                {!wardsQuery.isPending && wards.length === 0 && <tr><td className="px-6 py-14 text-center text-sm text-muted-foreground" colSpan={7}>No wards match your search and filter.</td></tr>}
+                {!wardsQuery.isPending && wards.length === 0 && <tr><td className="px-6 py-14 text-center text-sm text-muted-foreground" colSpan={8}>No wards match your search and filter.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -215,6 +329,15 @@ export function WardsView() {
 
       <CreateWardDialog onCreated={setCreated} onOpenChange={(open) => setModal(open ? 'add' : null)} open={modal === 'add'} />
       <BatchUploadWardsDialog onOpenChange={(open) => setModal(open ? 'upload' : null)} open={modal === 'upload'} />
+      <BulkLinkedWardFacilityStatusDialog
+        isPending={bulkUpdate.isPending}
+        nextStatus={bulkRequest?.nextStatus ?? 'active'}
+        onConfirm={() => void confirmBulkStatus()}
+        onOpenChange={(open) => !open && setBulkRequest(null)}
+        open={bulkRequest !== null}
+        scope="ward"
+        selectionCount={bulkRequest?.selectionCount ?? 0}
+      />
     </div>
   )
 }

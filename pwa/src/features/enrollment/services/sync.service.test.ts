@@ -123,6 +123,37 @@ describe('enrollment synchronization', () => {
   })
   afterAll(() => offlineDb.close())
 
+  it('syncs household enrollment without an ID document upload', async () => {
+    const head = completeMember('NoDoc')
+    head.form.idDocumentFileId = ''
+    head.form.idDocumentName = ''
+    const passport = await saveEnrollmentFile(owner, head.idempotencyId, 'passport', new File(['photo'], 'passport.jpg', { type: 'image/jpeg' }))
+    head.form.passportFileId = passport.id
+    const draft = {
+      ownerUserId: owner,
+      householdLocalId: '01900000-0000-7000-8000-000000000090',
+      householdCode: 'BAR-TAF-003',
+      wardId: '01900000-0000-7000-8000-000000000010',
+      sharedResidentialAddress: '12 Test Road',
+      head,
+      members: [],
+      phase: 'review' as const,
+      headStep: 5,
+      memberStep: 0,
+      activeMemberIndex: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    await queueHouseholdDraft(draft, 'Ward', new Map())
+    mocks.createHouseholdEnrollment.mockResolvedValue(acknowledgement(1))
+
+    await syncPendingEnrollments(owner)
+
+    expect(mocks.createHouseholdEnrollment).toHaveBeenCalledOnce()
+    expect(mocks.createHouseholdEnrollment.mock.calls[0][0]).not.toHaveProperty('idDocumentObjectKey')
+    expect(mocks.presignEnrollmentUpload).toHaveBeenCalledTimes(1)
+  })
+
   it('reports a completed sync even when a later record in the batch fails', async () => {
     await queueHousehold('First', '01900000-0000-7000-8000-000000000088', 'BAR-TAF-001')
     await queueHousehold('Second', '01900000-0000-7000-8000-000000000089', 'BAR-TAF-002')

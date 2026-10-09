@@ -3,6 +3,7 @@ export {
   useAssignWardFieldWorkers,
   useCreateWard,
   useDeleteWard,
+  useBulkUpdateWardStatus,
   useUpdateWard,
   useUploadWardsBatch,
 } from './useWardMutations'

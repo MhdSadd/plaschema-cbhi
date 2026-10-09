@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  ApiAcceptedResponse,
   ApiBearerAuth,
   ApiCreatedResponse,
   ApiExtraModels,
@@ -27,6 +28,7 @@ import { Roles } from '../../../platform/auth/roles.decorator';
 import { CursorPaginationMetaDto } from '../../../platform/http/cursor-pagination.dto';
 import { UuidV7Pipe } from '../../../platform/http/uuid-v7.pipe';
 import { CreateUserUseCase } from '../application/create-user.use-case';
+import { ExportFieldWorkerReportUseCase } from '../application/export-field-worker-report.use-case';
 import { GetFieldWorkerDetailUseCase } from '../application/get-field-worker-detail.use-case';
 import { GetUserUseCase } from '../application/get-user.use-case';
 import { ListUsersUseCase } from '../application/list-users.use-case';
@@ -34,6 +36,8 @@ import { ResetPasswordUseCase } from '../application/reset-password.use-case';
 import { UpdateUserUseCase } from '../application/update-user.use-case';
 import {
   CreateUserDto,
+  ExportFieldWorkerReportRequestDto,
+  ExportFieldWorkerReportResponseDto,
   FieldWorkerDetailResponseDto,
   FieldWorkerListItemDto,
   ListUsersQueryDto,
@@ -55,6 +59,7 @@ export class UsersController {
     private readonly getFieldWorkerDetail: GetFieldWorkerDetailUseCase,
     private readonly updateUser: UpdateUserUseCase,
     private readonly resetPassword: ResetPasswordUseCase,
+    private readonly exportFieldWorkerReport: ExportFieldWorkerReportUseCase,
   ) {}
 
   @Post()
@@ -126,6 +131,20 @@ export class UsersController {
       } satisfies CursorPaginationMetaDto,
       ...(result.summary ? { summary: result.summary } : {}),
     };
+  }
+
+  @Post('reports/export')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary:
+      'Enqueue enrollment officer report export (xlsx) using list filters',
+  })
+  @ApiAcceptedResponse({ type: ExportFieldWorkerReportResponseDto })
+  exportReport(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() body: ExportFieldWorkerReportRequestDto,
+  ) {
+    return this.exportFieldWorkerReport.execute(user, body);
   }
 
   @Get(':id/detail')

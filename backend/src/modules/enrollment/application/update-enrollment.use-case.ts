@@ -13,6 +13,7 @@ import {
 } from '../../ward/application/ward.repository';
 import { RecordActivityUseCase } from '../../activity-log/application/record-activity.use-case';
 import type { Enrollment } from '../domain/enrollment';
+import { isEnrollmentNin } from '../domain/enrollment-nin';
 import { enrollmentBeneficiaryName } from '../domain/enrollment-id';
 import {
   assertReasonableDateOfBirth,
@@ -225,6 +226,13 @@ export class UpdateEnrollmentUseCase {
 
     if (input.nin !== undefined) {
       const nin = input.nin?.trim() || null;
+      if (nin !== null && nin !== '' && !isEnrollmentNin(nin)) {
+        throw new AppError(
+          'VALIDATION_ERROR',
+          'NIN must contain exactly 11 digits',
+          400,
+        );
+      }
       if (nin !== existing.nin) {
         patch.nin = nin;
         changedFields.push(PROFILE_FIELD_LABELS.nin);

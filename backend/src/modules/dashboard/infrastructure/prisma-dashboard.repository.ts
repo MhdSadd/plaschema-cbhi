@@ -76,7 +76,8 @@ export class PrismaDashboardRepository implements DashboardRepository {
       activeFacilities,
       fieldWorkerScopeStats,
       categoryRows,
-      statusRows,
+      statusRowsScoped,
+      statusRowsCreatedInPeriod,
       wardGroups,
       lgaGroups,
       trendRows,
@@ -94,14 +95,14 @@ export class PrismaDashboardRepository implements DashboardRepository {
     ] = await Promise.all([
       this.prisma.enrollment.count({ where: geo }),
       this.prisma.enrollment.count({ where: { ...geo, status: 'active' } }),
-      this.prisma.enrollment.count({ where: { ...geo, status: 'disabled' } }),
+      this.prisma.enrollment.count({ where: { ...geo, status: 'pending' } }),
       this.prisma.enrollment.count({ where: periodCreated }),
       this.prisma.enrollment.count({ where: previousCreated }),
       this.prisma.enrollment.count({
         where: { ...previousCreated, status: 'active' },
       }),
       this.prisma.enrollment.count({
-        where: { ...previousCreated, status: 'disabled' },
+        where: { ...previousCreated, status: 'pending' },
       }),
       this.prisma.enrollment.count({ where: previousCreated }),
       this.countWards(query, undefined),
@@ -117,7 +118,12 @@ export class PrismaDashboardRepository implements DashboardRepository {
       this.loadFieldWorkerScope(query, window),
       this.prisma.enrollment.groupBy({
         by: ['category'],
-        where: periodCreated,
+        where: geo,
+        _count: { _all: true },
+      }),
+      this.prisma.enrollment.groupBy({
+        by: ['status'],
+        where: geo,
         _count: { _all: true },
       }),
       this.prisma.enrollment.groupBy({
@@ -383,24 +389,28 @@ export class PrismaDashboardRepository implements DashboardRepository {
       };
     });
 
-    const periodActive =
-      statusRows.find((row) => row.status === 'active')?._count._all ?? 0;
-    const periodInactive =
-      statusRows.find((row) => row.status === 'disabled')?._count._all ?? 0;
-    const statusDenom = periodActive + periodInactive;
+    const scopedActive =
+      statusRowsScoped.find((row) => row.status === 'active')?._count._all ??
+      0;
+    const scopedPending =
+      statusRowsScoped.find((row) => row.status === 'pending')?._count._all ??
+      0;
+    const statusDenom = scopedActive + scopedPending;
     const activePercent =
       statusDenom === 0
         ? 0
-        : Math.round((periodActive / statusDenom) * 1000) / 10;
+        : Math.round((scopedActive / statusDenom) * 1000) / 10;
     const inactivePercent =
       statusDenom === 0
         ? 0
-        : Math.round((periodInactive / statusDenom) * 1000) / 10;
+        : Math.round((scopedPending / statusDenom) * 1000) / 10;
 
     const activeCreatedInPeriod =
-      statusRows.find((row) => row.status === 'active')?._count._all ?? 0;
+      statusRowsCreatedInPeriod.find((row) => row.status === 'active')?._count
+        ._all ?? 0;
     const inactiveCreatedInPeriod =
-      statusRows.find((row) => row.status === 'disabled')?._count._all ?? 0;
+      statusRowsCreatedInPeriod.find((row) => row.status === 'pending')?._count
+        ._all ?? 0;
 
     return {
       kpis: {
@@ -476,8 +486,8 @@ export class PrismaDashboardRepository implements DashboardRepository {
         })),
       ),
       enrollmentByStatus: {
-        active: { count: periodActive, percent: activePercent },
-        inactive: { count: periodInactive, percent: inactivePercent },
+        active: { count: scopedActive, percent: activePercent },
+        inactive: { count: scopedPending, percent: inactivePercent },
       },
       enrollmentByWard,
       enrollmentByLga,

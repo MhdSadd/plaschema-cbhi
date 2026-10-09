@@ -20,12 +20,38 @@ export const LEGACY_BENEFICIARY_CATEGORY_ALIASES: Record<
   'Indigents / Very Poor / Others': 'Indigent (very poor) / others',
 };
 
+function matchKnownCategory(category: string): BeneficiaryCategory | null {
+  for (const item of BENEFICIARY_CATEGORIES) {
+    if (item === category) {
+      return item;
+    }
+  }
+  const lowered = category.toLowerCase();
+  for (const item of BENEFICIARY_CATEGORIES) {
+    if (item.toLowerCase() === lowered) {
+      return item;
+    }
+  }
+  return null;
+}
+
 export function normalizeBeneficiaryCategory(category: string): string {
   const trimmed = category.trim();
-  if ((BENEFICIARY_CATEGORIES as readonly string[]).includes(trimmed)) {
+  if (!trimmed) {
     return trimmed;
   }
-  return LEGACY_BENEFICIARY_CATEGORY_ALIASES[trimmed] ?? trimmed;
+  const known = matchKnownCategory(trimmed);
+  if (known) {
+    return known;
+  }
+  const alias = LEGACY_BENEFICIARY_CATEGORY_ALIASES[trimmed];
+  if (alias) {
+    return alias;
+  }
+  const aliasInsensitive = Object.entries(
+    LEGACY_BENEFICIARY_CATEGORY_ALIASES,
+  ).find(([key]) => key.toLowerCase() === trimmed.toLowerCase())?.[1];
+  return aliasInsensitive ?? trimmed;
 }
 
 export function isKnownBeneficiaryCategory(

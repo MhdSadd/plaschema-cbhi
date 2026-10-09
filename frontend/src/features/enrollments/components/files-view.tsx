@@ -92,7 +92,7 @@ export function FilesView() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Files</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Track and download generated ID-card PDFs and enrollment reports.
+            Track and download generated ID-card PDFs, enrollment reports and enrollment officer exports.
           </p>
         </div>
         <div className="flex gap-2">
@@ -187,8 +187,12 @@ export function FilesView() {
                             </div>
                           </td>
                           <td className={`${tdCell} text-muted-foreground`}>
-                            {job.kind === 'id_card' ? 'ID cards' : 'Enrollment report'} ·{' '}
-                            {job.format.toUpperCase()}
+                            {job.kind === 'id_card'
+                              ? 'ID cards'
+                              : job.kind === 'field_worker_report'
+                                ? 'Enrollment officers'
+                                : 'Enrollment report'}{' '}
+                            · {job.format.toUpperCase()}
                           </td>
                           <td className={`${tdCell} whitespace-nowrap text-muted-foreground`}>
                             {formatEnrollmentDate(job.createdAt, true)}
@@ -222,6 +226,15 @@ export function FilesView() {
                                 job.kind === 'enrollment_report' ? (
                                 <Button
                                   onClick={() => navigate('/admin/beneficiaries')}
+                                  size="sm"
+                                  variant="outline"
+                                >
+                                  Run export again
+                                </Button>
+                              ) : job.status === 'failed' &&
+                                job.kind === 'field_worker_report' ? (
+                                <Button
+                                  onClick={() => navigate('/admin/field-workers')}
                                   size="sm"
                                   variant="outline"
                                 >

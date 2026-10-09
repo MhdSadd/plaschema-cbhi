@@ -30,6 +30,7 @@ describe('bucketEnrollmentCategory / normalizeCategoryBreakdown', () => {
   it('maps legacy and unknown categories', () => {
     expect(bucketEnrollmentCategory('IDPs')).toBe('IDP');
     expect(bucketEnrollmentCategory('Internal displaced persons')).toBe('IDP');
+    expect(bucketEnrollmentCategory('idp')).toBe('IDP');
     expect(bucketEnrollmentCategory('Refugees')).toBe('Other');
   });
 

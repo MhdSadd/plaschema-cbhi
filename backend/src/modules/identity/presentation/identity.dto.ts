@@ -5,6 +5,7 @@ import {
   IsArray,
   IsEmail,
   IsEnum,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -191,6 +192,142 @@ export class ListUsersQueryDto {
   @IsString()
   @MaxLength(160)
   search?: string;
+
+  @ApiPropertyOptional({
+    type: Number,
+    minimum: 0,
+    description: 'Field workers only: minimum beneficiaries enrolled',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === undefined || value === '' ? undefined : toQueryInt(value, 0, { min: 0 }),
+  )
+  @IsInt()
+  @Min(0)
+  beneficiariesEnrolledMin?: number;
+
+  @ApiPropertyOptional({
+    type: Number,
+    minimum: 0,
+    description: 'Field workers only: maximum beneficiaries enrolled',
+  })
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === undefined || value === '' ? undefined : toQueryInt(value, 0, { min: 0 }),
+  )
+  @IsInt()
+  @Min(0)
+  beneficiariesEnrolledMax?: number;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: '2024-01-01',
+    description: 'Field workers only: last enrollment on or after (YYYY-MM-DD)',
+  })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  lastEnrollmentFrom?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: '2024-12-31',
+    description: 'Field workers only: last enrollment on or before (YYYY-MM-DD)',
+  })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  lastEnrollmentTo?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: '2024-01-01',
+    description: 'Field workers only: last sync on or after (YYYY-MM-DD)',
+  })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  lastSyncedFrom?: string;
+
+  @ApiPropertyOptional({
+    type: String,
+    example: '2024-12-31',
+    description: 'Field workers only: last sync on or before (YYYY-MM-DD)',
+  })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  lastSyncedTo?: string;
+}
+
+export class ExportFieldWorkerReportRequestDto {
+  @ApiProperty({
+    enum: ['xlsx'],
+    example: 'xlsx',
+    description: 'Export format. Only xlsx is supported.',
+  })
+  @IsIn(['xlsx'])
+  format!: 'xlsx';
+
+  @ApiPropertyOptional({ enum: ['active', 'inactive'] })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @IsEnum(['active', 'inactive'])
+  status?: 'active' | 'inactive';
+
+  @ApiPropertyOptional({
+    type: String,
+    description: 'Search by name, email, or phone',
+  })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @IsString()
+  @MaxLength(160)
+  search?: string;
+
+  @ApiPropertyOptional({ type: Number, minimum: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  beneficiariesEnrolledMin?: number;
+
+  @ApiPropertyOptional({ type: Number, minimum: 0 })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  beneficiariesEnrolledMax?: number;
+
+  @ApiPropertyOptional({ type: String, example: '2024-01-01' })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  lastEnrollmentFrom?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2024-12-31' })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  lastEnrollmentTo?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2024-01-01' })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  lastSyncedFrom?: string;
+
+  @ApiPropertyOptional({ type: String, example: '2024-12-31' })
+  @EmptyStringToUndefined()
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  lastSyncedTo?: string;
+}
+
+export class ExportFieldWorkerReportResponseDto {
+  @ApiProperty({ format: 'uuid' })
+  jobId!: string;
+
+  @ApiProperty({ enum: ['queued'] })
+  status!: 'queued';
 }
 
 export class UserWardResponseDto {

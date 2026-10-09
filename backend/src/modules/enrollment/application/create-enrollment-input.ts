@@ -7,7 +7,7 @@ export type CreateEnrollmentInput = {
   /** Beneficiary category label shown in admin tables. */
   category: string;
   passportObjectKey: string;
-  idDocumentObjectKey: string;
+  idDocumentObjectKey?: string | null;
   title: Enrollment['title'];
   gender: Enrollment['gender'];
   firstName: string;
