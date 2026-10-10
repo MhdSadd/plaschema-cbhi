@@ -1,5 +1,6 @@
 export {
   createFieldWorker,
+  exportFieldWorkers,
   fetchAssignableFieldWorkers,
   fetchFieldWorkerDetail,
   fetchFieldWorkers,

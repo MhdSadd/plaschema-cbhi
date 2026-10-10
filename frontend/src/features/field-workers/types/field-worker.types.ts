@@ -28,6 +28,16 @@ export interface FieldWorkerListParams {
   limit?: number
   search?: string
   status?: FieldWorkerStatus
+  beneficiariesEnrolledMin?: number
+  beneficiariesEnrolledMax?: number
+  lastEnrollmentFrom?: string
+  lastEnrollmentTo?: string
+  lastSyncedFrom?: string
+  lastSyncedTo?: string
+}
+
+export type ExportFieldWorkerPayload = Omit<FieldWorkerListParams, 'cursor' | 'limit'> & {
+  format: 'xlsx'
 }
 
 export interface FieldWorkerListResult {

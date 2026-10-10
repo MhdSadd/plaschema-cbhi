@@ -1,5 +1,6 @@
 export { facilityKeys } from './facility.keys'
 export {
+  useBulkUpdateHealthFacilityStatus,
   useCreateHealthFacility,
   useDeleteHealthFacility,
   useUpdateHealthFacility,

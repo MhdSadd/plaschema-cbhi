@@ -36,7 +36,9 @@ export function toTrendSeries(points: DashboardTrendPoint[]): TrendDatum[] {
 }
 
 export function toCategorySeries(items: DashboardCategoryCount[]): EnrollmentBarItem[] {
-  return items.map((item) => ({ id: item.category, label: item.category, count: safeCount(item.count) }))
+  return items
+    .filter((item) => safeCount(item.count) > 0)
+    .map((item) => ({ id: item.category, label: item.category, count: safeCount(item.count) }))
 }
 
 export function toWardSeries(items: Array<{ wardId: string; name: string; count: number }>): EnrollmentBarItem[] {
@@ -54,6 +56,6 @@ export function toLabelSeries(items: Array<{ label: string; count: number }>): E
 export function toStatusSeries(breakdown: DashboardStatusBreakdown): StatusDatum[] {
   return [
     { name: 'Active', count: safeCount(breakdown.active.count), percent: safePercent(breakdown.active.percent) },
-    { name: 'Inactive', count: safeCount(breakdown.inactive.count), percent: safePercent(breakdown.inactive.percent) },
+    { name: 'Pending', count: safeCount(breakdown.inactive.count), percent: safePercent(breakdown.inactive.percent) },
   ]
 }

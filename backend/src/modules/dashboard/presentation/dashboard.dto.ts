@@ -206,7 +206,7 @@ export class DashboardEnrollmentByStatusDto {
 
   @ApiProperty({
     type: DashboardStatusSliceDto,
-    description: 'Maps to enrollment status disabled',
+    description: 'Maps to enrollment status pending (not yet active)',
   })
   inactive!: DashboardStatusSliceDto;
 }

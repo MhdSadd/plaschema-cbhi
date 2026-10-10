@@ -5,4 +5,5 @@ export {
   useResetFieldWorkerPassword,
   useUpdateFieldWorker,
 } from './useFieldWorkerMutations'
+export { useExportFieldWorkers } from './useFieldWorkerExport'
 export { useFieldWorkers } from './useFieldWorkers'

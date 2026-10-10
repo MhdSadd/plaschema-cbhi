@@ -73,7 +73,7 @@ Each head or member uses the same six steps:
 1. **Personal** — passport photo, category, title, names, gender, DOB, marital status, optional blood group / genotype
 2. **Residence** — state (fixed Plateau), LGA, ward, residential address
 3. **Contact** — phone (11 digits), optional email, optional emergency phone (11 digits)
-4. **Background** — ID type, ID document; NIN required (10 digits) when ID type is NIN
+4. **Background** — ID type; optional ID document upload; NIN required (11 digits) when ID type is NIN
 5. **Facility** — health facility for the selected ward (auto-selected when ward has one active facility)
 6. **Review** — confirm and save locally
 
@@ -334,7 +334,7 @@ Used by `POST /household-enrollments` (via `CreateEnrollmentDto` fields on the r
 | `capturedAt` | No | ISO datetime from device |
 | `category` | Yes | One of the seven fixed programme categories |
 | `passportObjectKey` | Yes | From presign upload |
-| `idDocumentObjectKey` | Yes | From presign upload |
+| `idDocumentObjectKey` | No | From presign upload when the worker attached an ID document |
 | `title` | Yes | `mr`, `mrs`, `miss`, `ms`, `dr`, `chief`, `rev`, `alhaji`, `hajia`, `other` |
 | `gender` | Yes | `male`, `female` |
 | `firstName`, `lastName` | Yes | Max 80 chars |
@@ -342,7 +342,7 @@ Used by `POST /household-enrollments` (via `CreateEnrollmentDto` fields on the r
 | `dateOfBirth` | Yes | `YYYY-MM-DD` |
 | `phone` | Yes | Max 30 chars; client validates 11 digits |
 | `email` | No | |
-| `nin` | No | Required in practice when `idType` is `nin` (10 digits) |
+| `nin` | No | Required in practice when `idType` is `nin` (11 digits) |
 | `maritalStatus` | Yes | `single`, `married`, `divorced`, `widowed`, `separated` |
 | `bloodGroup`, `genotype` | No | |
 | `idType` | Yes | `nin`, `national_id`, `voters_card`, `drivers_license`, `international_passport`, `other` |

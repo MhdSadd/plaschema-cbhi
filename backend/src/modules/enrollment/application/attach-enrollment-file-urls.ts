@@ -7,7 +7,7 @@ import type { Enrollment } from '../domain/enrollment';
 
 export type EnrollmentWithFileUrls = Enrollment & {
   passportUrl: string;
-  idDocumentUrl: string;
+  idDocumentUrl: string | null;
   fileUrlExpiresInSeconds: number;
   hasPrinted: boolean;
 };
@@ -19,15 +19,17 @@ export class AttachEnrollmentFileUrls {
   ) {}
 
   async forOne(enrollment: Enrollment): Promise<EnrollmentWithFileUrls> {
-    const [passport, idDocument] = await Promise.all([
-      this.storage.createReadUrl(enrollment.passportObjectKey),
-      this.storage.createReadUrl(enrollment.idDocumentObjectKey),
-    ]);
+    const passport = await this.storage.createReadUrl(
+      enrollment.passportObjectKey,
+    );
+    const idDocument = enrollment.idDocumentObjectKey
+      ? await this.storage.createReadUrl(enrollment.idDocumentObjectKey)
+      : null;
 
     return {
       ...enrollment,
       passportUrl: passport.readUrl,
-      idDocumentUrl: idDocument.readUrl,
+      idDocumentUrl: idDocument?.readUrl ?? null,
       fileUrlExpiresInSeconds: passport.expiresInSeconds,
       hasPrinted: enrollment.printedAt != null || enrollment.printCount > 0,
     };

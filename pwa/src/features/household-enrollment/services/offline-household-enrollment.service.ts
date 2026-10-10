@@ -257,7 +257,9 @@ export function toCreateHouseholdEnrollmentPayload(record: LocalEnrollmentRecord
     capturedAt: record.capturedAt,
     category: record.form.category as CreateHouseholdEnrollmentPayload['category'],
     passportObjectKey: record.passportObjectKey!,
-    idDocumentObjectKey: record.idDocumentObjectKey!,
+    ...(record.idDocumentObjectKey
+      ? { idDocumentObjectKey: record.idDocumentObjectKey }
+      : {}),
     title: record.form.title as CreateHouseholdEnrollmentPayload['title'],
     gender: record.form.gender as CreateHouseholdEnrollmentPayload['gender'],
     firstName: record.form.firstName.trim(),

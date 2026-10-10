@@ -23,7 +23,7 @@ export type CreateEnrollmentRecordInput = {
   healthFacilityId: string;
   passportObjectKey: string;
   passportPrintObjectKey?: string | null;
-  idDocumentObjectKey: string;
+  idDocumentObjectKey: string | null;
   title: Enrollment['title'];
   gender: Enrollment['gender'];
   firstName: string;

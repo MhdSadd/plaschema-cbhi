@@ -4,7 +4,7 @@ export type EnrollmentStatus = 'pending' | 'active' | 'disabled' | 'deceased'
 export type EnrollmentStatusTarget = 'active' | 'disabled'
 export type EnrollmentStatusSkipReason = 'not_found' | 'unchanged' | 'invalid_transition'
 export type PrintedStatus = 'all' | 'printed' | 'not_printed'
-export type FileJobKind = 'id_card' | 'enrollment_report'
+export type FileJobKind = 'id_card' | 'enrollment_report' | 'field_worker_report'
 export type FileJobFormat = 'pdf' | 'xlsx'
 export type FileJobStatus = 'queued' | 'processing' | 'failed' | 'completed'
 
@@ -125,9 +125,9 @@ export interface EnrollmentRecord {
   wardId: string
   healthFacilityId: string
   passportObjectKey: string
-  idDocumentObjectKey: string
+  idDocumentObjectKey: string | null
   passportUrl: string
-  idDocumentUrl: string
+  idDocumentUrl: string | null
   fileUrlExpiresInSeconds: number
   title: EnrollmentTitle
   gender: EnrollmentGender

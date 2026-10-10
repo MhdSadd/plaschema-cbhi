@@ -2,6 +2,7 @@ import type {
   CursorListQuery,
   CursorPage,
 } from '../../../platform/http/cursor-pagination';
+import type { ResolvedFieldWorkerListFilters } from '../domain/field-worker-list-filters';
 import type {
   FieldWorkerDetailAggregates,
   FieldWorkerListItem,
@@ -40,6 +41,7 @@ export type ListUsersQuery = CursorListQuery & {
   role?: UserRole;
   status?: UserStatus;
   search?: string;
+  fieldWorkerFilters?: ResolvedFieldWorkerListFilters;
 };
 
 export type PaginatedUsers = CursorPage<PublicUser | FieldWorkerListItem> & {
@@ -60,4 +62,7 @@ export interface UserRepository {
   findFieldWorkerDetailAggregates(
     userId: string,
   ): Promise<FieldWorkerDetailAggregates | null>;
+  iterateFieldWorkersForExport(
+    filters: ResolvedFieldWorkerListFilters,
+  ): AsyncIterable<FieldWorkerListItem>;
 }

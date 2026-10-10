@@ -122,7 +122,7 @@ export function ContactStep({ form, errors, update }: EnrollmentStepProps) {
 
 export function BackgroundStep({ form, errors, update, handleFile, clearFile }: EnrollmentStepProps) {
   const ninRequired = form.idType === 'nin'
-  return <><Field label="ID type" required error={errors.idType}><select className="field" value={form.idType} onChange={(e) => update('idType', e.target.value)}><option value="">Select</option>{idOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>{ninRequired && <Field label="NIN" required error={errors.nin}><input className="field" inputMode="numeric" pattern="[0-9]*" placeholder="10 digits" value={form.nin} onChange={(e) => update('nin', normalizeNin(e.target.value))} /></Field>}<FilePicker label="ID document" name="idDocument" value={form.idDocumentName} error={errors.idDocumentFileId} accept="image/jpeg,image/png,image/webp,application/pdf" icon={<FileText size={26} />} onChange={(event) => void handleFile('id_document', event)} onClear={() => void clearFile('id_document')} /></>
+  return <><Field label="ID type" required error={errors.idType}><select className="field" value={form.idType} onChange={(e) => update('idType', e.target.value)}><option value="">Select</option>{idOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></Field>{ninRequired && <Field label="NIN" required error={errors.nin}><input className="field" inputMode="numeric" pattern="[0-9]*" placeholder="11 digits" value={form.nin} onChange={(e) => update('nin', normalizeNin(e.target.value))} /></Field>}<FilePicker label="ID document (optional)" name="idDocument" optional value={form.idDocumentName} error={errors.idDocumentFileId} accept="image/jpeg,image/png,image/webp,application/pdf" icon={<FileText size={26} />} onChange={(event) => void handleFile('id_document', event)} onClear={() => void clearFile('id_document')} /></>
 }
 
 export function FacilityStep({ form, errors, facilities, ward, update, lockFacility }: EnrollmentStepProps & { facilities: ReferenceFacility[]; ward?: ReferenceWard; lockFacility?: boolean }) {
@@ -132,8 +132,8 @@ export function FacilityStep({ form, errors, facilities, ward, update, lockFacil
     : <Field label="Health facility" required error={errors.healthFacilityId}><select className="field" value={form.healthFacilityId} onChange={(e) => update('healthFacilityId', e.target.value)}><option value="">Select facility</option>{facilities.map((facility) => <option key={facility.id} value={facility.id}>{facility.name}</option>)}</select></Field>}</>
 }
 
-function FilePicker({ label, name, value, error, accept, capture, icon, onChange, onClear }: { label: string; name: string; value: string; error?: string; accept: string; capture?: 'user'; icon: ReactNode; onChange: (event: ChangeEvent<HTMLInputElement>) => void; onClear: () => void }) {
-  return <div><p className="mb-2 text-sm font-bold">{label} <span className="text-red-600">*</span></p><div className={`rounded-xl border-2 border-dashed p-5 text-center ${error ? 'border-red-300 bg-red-50' : 'border-neutral-200 bg-neutral-50'}`}><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-white text-neutral-500">{value ? <Check className="text-green-700" /> : icon}</span><p className="mt-2 truncate text-sm font-bold">{value || 'No file selected'}</p><div className="mt-3 flex justify-center gap-2"><label className="secondary-button inline-flex items-center gap-2 !min-h-9 cursor-pointer !py-2 text-xs"><Upload size={14} />Choose file<input className="sr-only" type="file" name={name} accept={accept} capture={capture} onChange={onChange} /></label>{value && <button type="button" aria-label={`Remove ${label}`} className="secondary-button !min-h-9 !py-2 text-xs" onClick={onClear}><RotateCcw size={14} /></button>}</div></div>{error && <p className="mt-1 text-xs font-semibold text-red-600">{error}</p>}</div>
+function FilePicker({ label, name, value, error, accept, capture, icon, optional, onChange, onClear }: { label: string; name: string; value: string; error?: string; accept: string; capture?: 'user'; optional?: boolean; icon: ReactNode; onChange: (event: ChangeEvent<HTMLInputElement>) => void; onClear: () => void }) {
+  return <div><p className="mb-2 text-sm font-bold">{label}{!optional && <span className="text-red-600"> *</span>}</p><div className={`rounded-xl border-2 border-dashed p-5 text-center ${error ? 'border-red-300 bg-red-50' : 'border-neutral-200 bg-neutral-50'}`}><span className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-white text-neutral-500">{value ? <Check className="text-green-700" /> : icon}</span><p className="mt-2 truncate text-sm font-bold">{value || 'No file selected'}</p><div className="mt-3 flex justify-center gap-2"><label className="secondary-button inline-flex items-center gap-2 !min-h-9 cursor-pointer !py-2 text-xs"><Upload size={14} />Choose file<input className="sr-only" type="file" name={name} accept={accept} capture={capture} onChange={onChange} /></label>{value && <button type="button" aria-label={`Remove ${label}`} className="secondary-button !min-h-9 !py-2 text-xs" onClick={onClear}><RotateCcw size={14} /></button>}</div></div>{error && <p className="mt-1 text-xs font-semibold text-red-600">{error}</p>}</div>
 }
 
 export function validateEnrollmentStep(form: EnrollmentFormValues, step: number) {
@@ -141,7 +141,7 @@ export function validateEnrollmentStep(form: EnrollmentFormValues, step: number)
     ? ['category', 'passportFileId', 'title', 'firstName', 'lastName', 'gender', 'dateOfBirth', 'maritalStatus']
     : step === 1 ? ['lgaOfResidence', 'residentialAddress', 'wardId']
       : step === 2 ? ['phone']
-        : step === 3 ? ['idType', 'idDocumentFileId']
+        : step === 3 ? ['idType']
           : step === 4 ? ['healthFacilityId'] : []
   const errors: Record<string, string> = {}
   for (const key of needed) if (!form[key].trim()) errors[key] = 'This field is required.'
@@ -150,7 +150,7 @@ export function validateEnrollmentStep(form: EnrollmentFormValues, step: number)
   if (step === 2 && form.emergencyPhone && !isValidPhoneNumber(form.emergencyPhone)) errors.emergencyPhone = 'Enter exactly 11 digits.'
   if (step === 3 && form.idType === 'nin') {
     if (!form.nin.trim()) errors.nin = 'This field is required.'
-    else if (!isValidNin(form.nin)) errors.nin = 'NIN must contain exactly 10 digits.'
+    else if (!isValidNin(form.nin)) errors.nin = 'NIN must contain exactly 11 digits.'
   }
   return errors
 }

@@ -340,13 +340,24 @@ export class CreateHouseholdEnrollmentUseCase {
     }
 
     const passportExists = await this.storage.exists(input.passportObjectKey);
-    const idDocExists = await this.storage.exists(input.idDocumentObjectKey);
-    if (!passportExists || !idDocExists) {
+    if (!passportExists) {
       throw new AppError(
         'UPLOAD_NOT_FOUND',
-        'Passport and ID document uploads are required before enrollment',
+        'Passport upload is required before enrollment',
         400,
       );
+    }
+
+    const idDocumentObjectKey = input.idDocumentObjectKey?.trim() || null;
+    if (idDocumentObjectKey) {
+      const idDocExists = await this.storage.exists(idDocumentObjectKey);
+      if (!idDocExists) {
+        throw new AppError(
+          'UPLOAD_NOT_FOUND',
+          'ID document upload was not found in storage',
+          400,
+        );
+      }
     }
 
     const passportPrintObjectKey = await this.passportPrint.ensureStored(
@@ -381,7 +392,7 @@ export class CreateHouseholdEnrollmentUseCase {
         healthFacilityId: input.healthFacilityId,
         passportObjectKey: input.passportObjectKey,
         passportPrintObjectKey,
-        idDocumentObjectKey: input.idDocumentObjectKey,
+        idDocumentObjectKey,
         title: input.title,
         gender: input.gender,
         firstName,

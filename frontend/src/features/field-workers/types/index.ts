@@ -7,6 +7,7 @@ export type {
   FieldWorkerListParams,
   FieldWorkerListResult,
   FieldWorkerListSummary,
+  ExportFieldWorkerPayload,
   FieldWorkerOverview,
   FieldWorkerStats,
   FieldWorkerStatus,

@@ -137,7 +137,7 @@ export interface CreateEnrollmentPayload {
   capturedAt: string
   category: BeneficiaryCategory
   passportObjectKey: string
-  idDocumentObjectKey: string
+  idDocumentObjectKey?: string
   title: EnrollmentTitle
   gender: EnrollmentGender
   firstName: string

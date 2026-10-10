@@ -10,6 +10,8 @@ import {
   updateWard,
   uploadWardsBatch,
 } from '../services'
+import type { WardStatus } from '../types'
+import { facilityKeys } from '@/features/facilities/hooks/facility.keys'
 import { wardKeys } from './ward.keys'
 
 export function useCreateWard() {
@@ -76,6 +78,48 @@ export function useUpdateWard() {
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, 'Unable to update the ward.'))
+    },
+  })
+}
+
+export function useBulkUpdateWardStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({
+      ids,
+      status,
+    }: {
+      ids: string[]
+      status: WardStatus
+    }) => {
+      let succeeded = 0
+      let failed = 0
+      for (const id of ids) {
+        try {
+          await updateWard({ id, payload: { status } })
+          succeeded += 1
+        } catch {
+          failed += 1
+        }
+      }
+      return { succeeded, failed }
+    },
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: wardKeys.lists() })
+      void queryClient.invalidateQueries({ queryKey: facilityKeys.all })
+      if (result.failed > 0) {
+        toast.warning(
+          `${result.succeeded} ward${result.succeeded === 1 ? '' : 's'} updated; ${result.failed} failed.`,
+        )
+        return
+      }
+      toast.success(
+        `${result.succeeded} ward${result.succeeded === 1 ? '' : 's'} updated successfully.`,
+      )
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, 'Unable to update ward status.'))
     },
   })
 }

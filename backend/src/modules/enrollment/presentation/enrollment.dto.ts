@@ -82,13 +82,15 @@ export class CreateEnrollmentDto {
   @IsNotEmpty()
   passportObjectKey!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description:
-      'Object key returned by POST /enrollments/files/presign-upload (id_document)',
+      'Optional object key from POST /enrollments/files/presign-upload (id_document)',
   })
+  @EmptyStringToUndefined()
+  @IsOptional()
   @IsString()
   @IsNotEmpty()
-  idDocumentObjectKey!: string;
+  idDocumentObjectKey?: string;
 
   @ApiProperty({ enum: ENROLLMENT_TITLES })
   @IsEnum(ENROLLMENT_TITLES)
@@ -137,10 +139,13 @@ export class CreateEnrollmentDto {
   @MaxLength(160)
   email?: string;
 
-  @ApiPropertyOptional({ example: '70199989896' })
+  @ApiPropertyOptional({
+    example: '70199989896',
+    description: 'When provided, must contain exactly 11 digits',
+  })
   @IsOptional()
   @IsString()
-  @MaxLength(20)
+  @Matches(/^\d{11}$/, { message: 'nin must contain exactly 11 digits' })
   nin?: string;
 
   @ApiProperty({ enum: MARITAL_STATUSES })
@@ -582,19 +587,20 @@ export class EnrollmentResponseDto {
   @ApiProperty()
   passportObjectKey!: string;
 
-  @ApiProperty()
-  idDocumentObjectKey!: string;
+  @ApiPropertyOptional({ nullable: true })
+  idDocumentObjectKey!: string | null;
 
   @ApiProperty({
     description: 'Presigned Railway GET URL for the passport image (30m TTL)',
   })
   passportUrl!: string;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
+    nullable: true,
     description:
-      'Presigned Railway GET URL for the ID document image (30m TTL)',
+      'Presigned Railway GET URL for the ID document when uploaded (30m TTL)',
   })
-  idDocumentUrl!: string;
+  idDocumentUrl!: string | null;
 
   @ApiProperty({
     example: 1800,

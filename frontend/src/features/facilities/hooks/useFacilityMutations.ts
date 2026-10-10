@@ -9,6 +9,8 @@ import {
   updateHealthFacility,
   uploadHealthFacilitiesBatch,
 } from '../services'
+import type { HealthFacilityStatus } from '../types'
+import { wardKeys } from '@/features/wards/hooks/ward.keys'
 import { facilityKeys } from './facility.keys'
 
 export function useCreateHealthFacility() {
@@ -59,6 +61,47 @@ export function useUpdateHealthFacility() {
       toast.success('Facility updated successfully.')
     },
     onError: (error) => toast.error(getApiErrorMessage(error, 'Unable to update the facility.')),
+  })
+}
+
+/** One PATCH per ward so linked ward/facility sync matches single-facility updates. */
+export function useBulkUpdateHealthFacilityStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async ({
+      facilityIds,
+      status,
+    }: {
+      facilityIds: string[]
+      status: HealthFacilityStatus
+    }) => {
+      let succeeded = 0
+      let failed = 0
+      for (const id of facilityIds) {
+        try {
+          await updateHealthFacility({ id, payload: { status } })
+          succeeded += 1
+        } catch {
+          failed += 1
+        }
+      }
+      return { succeeded, failed }
+    },
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: facilityKeys.lists() })
+      void queryClient.invalidateQueries({ queryKey: wardKeys.lists() })
+      if (result.failed > 0) {
+        toast.warning(
+          `${result.succeeded} linked ward update${result.succeeded === 1 ? '' : 's'} succeeded; ${result.failed} failed.`,
+        )
+        return
+      }
+      toast.success(
+        `${result.succeeded} linked ward${result.succeeded === 1 ? '' : 's'} and ${result.succeeded === 1 ? 'its' : 'their'} facilities updated successfully.`,
+      )
+    },
+    onError: (error) =>
+      toast.error(getApiErrorMessage(error, 'Unable to update facility status.')),
   })
 }
 

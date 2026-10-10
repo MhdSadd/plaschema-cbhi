@@ -25,11 +25,11 @@ export function isValidPhoneNumber(value: string) {
 }
 
 export function normalizeNin(value: string | undefined | null) {
-  return (value ?? '').replace(/\D/g, '').slice(0, 10)
+  return (value ?? '').replace(/\D/g, '').slice(0, 11)
 }
 
 export function isValidNin(value: string) {
-  return /^\d{10}$/.test(value)
+  return /^\d{11}$/.test(value)
 }
 
 export function getActiveWardFacilities(wardId: string, facilities: ReferenceFacility[]) {
