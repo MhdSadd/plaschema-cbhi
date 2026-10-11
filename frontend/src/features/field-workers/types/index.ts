@@ -3,6 +3,7 @@ export type {
   CreateFieldWorkerPayload,
   FieldWorker,
   FieldWorkerActivityEntry,
+  FieldWorkerBatchResult,
   FieldWorkerDetail,
   FieldWorkerListParams,
   FieldWorkerListResult,
@@ -17,4 +18,5 @@ export type {
   ResetFieldWorkerPasswordVariables,
   UpdateFieldWorkerPayload,
   UpdateFieldWorkerVariables,
+  UploadFieldWorkersBatchVariables,
 } from './field-worker.types'

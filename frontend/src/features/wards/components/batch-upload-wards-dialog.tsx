@@ -1,5 +1,6 @@
 import {
   CircleCheck,
+  Download,
   FileSpreadsheet,
   LoaderCircle,
   Upload,
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 import { useUploadWardsBatch } from '../hooks/useWardMutations'
+import { downloadWardUploadTemplate, WARD_UPLOAD_COLUMNS } from '../utils/batch-upload-template'
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024
 const SUPPORTED_EXTENSIONS = ['.csv', '.xlsx', '.xls']
@@ -265,14 +267,18 @@ export function BatchUploadWardsDialog({
                   </div>
                 )}
 
+                <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                  <p className="font-semibold text-foreground">Columns</p>
+                  <p className="mt-1">{WARD_UPLOAD_COLUMNS}</p>
+                </div>
+
                 <Button
                   className="self-start px-0 text-sm"
-                  disabled
-                  title="Template download is not available yet"
+                  onClick={downloadWardUploadTemplate}
                   type="button"
                   variant="link"
                 >
-                  Download CSV Template
+                  <Download aria-hidden="true" className="size-4" /> Download CSV template
                 </Button>
               </div>
             )}

@@ -112,6 +112,17 @@ export class PrismaUserRepository implements UserRepository {
     return user ? this.map(user) : null;
   }
 
+  async findExistingEmails(emails: string[]): Promise<Set<string>> {
+    if (emails.length === 0) {
+      return new Set();
+    }
+    const rows = await this.prisma.user.findMany({
+      where: { email: { in: emails } },
+      select: { email: true },
+    });
+    return new Set(rows.map((row) => row.email));
+  }
+
   async list(query: ListUsersQuery): Promise<PaginatedUsers> {
     const limit = toQueryInt(query.limit, 50, { min: 1, max: 100 });
     const filterWhere = await this.buildUserFilterWhere(

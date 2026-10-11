@@ -18,7 +18,20 @@ import type {
   ResetFieldWorkerPasswordVariables,
   UpdateFieldWorkerVariables,
   ExportFieldWorkerPayload,
+  FieldWorkerBatchResult,
+  UploadFieldWorkersBatchVariables,
 } from '../types'
+
+function isFieldWorkerBatchResult(value: unknown): value is FieldWorkerBatchResult {
+  if (typeof value !== 'object' || value === null) return false
+  const result = value as Partial<FieldWorkerBatchResult>
+  return (
+    typeof result.created === 'number'
+    && typeof result.skipped === 'number'
+    && typeof result.failed === 'number'
+    && Array.isArray(result.errors)
+  )
+}
 import type { CreateFileJobResult } from '@/features/enrollments/types/enrollment.types'
 
 type FieldWorkerListResponse = ApiResponse<
@@ -91,6 +104,30 @@ export async function updateFieldWorker({
     typeof payload
   >(`/users/${id}`, payload)
   return response.data.data
+}
+
+/** POST /users/batch */
+export async function uploadFieldWorkersBatch({
+  file,
+  password,
+}: UploadFieldWorkersBatchVariables): Promise<FieldWorkerBatchResult> {
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('password', password)
+
+  const response = await _post<
+    ApiResponse<FieldWorkerBatchResult> | FieldWorkerBatchResult,
+    FormData
+  >('/users/batch', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+
+  const body = response.data
+  const result = isFieldWorkerBatchResult(body) ? body : body.data
+  if (!isFieldWorkerBatchResult(result)) {
+    throw new Error('Unexpected batch upload response.')
+  }
+  return result
 }
 
 /** POST /users/reports/export */

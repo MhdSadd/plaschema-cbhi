@@ -50,6 +50,7 @@ export interface WardRepository {
   findByName(name: string): Promise<Ward | null>;
   findOneByLga(lga: string): Promise<Ward | null>;
   findByNames(names: string[]): Promise<Ward[]>;
+  findByLgaAndNames(lga: string, names: string[]): Promise<Ward[]>;
   findByCodes(codes: string[]): Promise<Ward[]>;
   listCodes(): Promise<string[]>;
   list(query: ListWardsQuery): Promise<PaginatedWards>;

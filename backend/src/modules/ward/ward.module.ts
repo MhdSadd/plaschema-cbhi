@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
 import { IdentityModule } from '../identity/identity.module';
 import { AssignWardFieldWorkersUseCase } from './application/assign-ward-field-workers.use-case';
@@ -16,7 +16,7 @@ import { PrismaWardRepository } from './infrastructure/prisma-ward.repository';
 import { WardController } from './presentation/ward.controller';
 
 @Module({
-  imports: [ActivityLogModule, IdentityModule],
+  imports: [ActivityLogModule, forwardRef(() => IdentityModule)],
   controllers: [WardController],
   providers: [
     { provide: WARD_REPOSITORY, useClass: PrismaWardRepository },

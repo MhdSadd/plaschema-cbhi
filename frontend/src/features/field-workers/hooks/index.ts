@@ -2,6 +2,7 @@ export { useAssignableFieldWorkers } from './useAssignableFieldWorkers'
 export { useFieldWorkerDetail } from './useFieldWorkerDetail'
 export {
   useCreateFieldWorker,
+  useUploadFieldWorkersBatch,
   useResetFieldWorkerPassword,
   useUpdateFieldWorker,
 } from './useFieldWorkerMutations'

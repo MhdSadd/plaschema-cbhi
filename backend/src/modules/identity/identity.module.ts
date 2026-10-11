@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
 import { FileJobModule } from '../file-job/file-job.module';
+import { WardModule } from '../ward/ward.module';
+import { BatchCreateFieldWorkersUseCase } from './application/batch-create-field-workers.use-case';
 import { ChangePasswordUseCase } from './application/change-password.use-case';
 import { CreateUserUseCase } from './application/create-user.use-case';
 import { ExportFieldWorkerReportUseCase } from './application/export-field-worker-report.use-case';
@@ -31,6 +33,7 @@ import { UsersController } from './presentation/users.controller';
   imports: [
     ActivityLogModule,
     FileJobModule,
+    forwardRef(() => WardModule),
     BullModule.registerQueue({ name: FIELD_WORKER_EXPORT_QUEUE_NAME }),
   ],
   controllers: [AuthController, UsersController],
@@ -43,6 +46,7 @@ import { UsersController } from './presentation/users.controller';
     LoginUseCase,
     ChangePasswordUseCase,
     CreateUserUseCase,
+    BatchCreateFieldWorkersUseCase,
     ListUsersUseCase,
     ResolveFieldWorkerListFiltersUseCase,
     ExportFieldWorkerReportUseCase,

@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 
 import { useExportFieldWorkers, useFieldWorkers } from '../hooks'
 import type { ExportFieldWorkerPayload, FieldWorkerStatus } from '../types'
+import { BatchUploadFieldWorkersDialog } from './batch-upload-field-workers-dialog'
 import { CreateFieldWorkerDialog } from './create-field-worker-dialog'
 import { CredentialResultDialog, type CredentialResult } from './credential-result-dialog'
 
@@ -47,6 +48,7 @@ export function FieldWorkersView() {
   const [cursors, setCursors] = useState<Array<string | undefined>>([undefined])
   const [pageIndex, setPageIndex] = useState(0)
   const [createOpen, setCreateOpen] = useState(false)
+  const [uploadOpen, setUploadOpen] = useState(false)
   const [credentials, setCredentials] = useState<CredentialResult | null>(null)
   const [exportOpen, setExportOpen] = useState(false)
   const [activeJobId, setActiveJobId] = useState<string | null>(null)
@@ -156,7 +158,7 @@ export function FieldWorkersView() {
 
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6">
-      <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold tracking-[-0.48px]">Enrollment Officers</h1><p className="mt-0.5 text-sm text-muted-foreground">Manage enrollment officer accounts, ward access and enrollment activity.</p></div><div className="flex flex-wrap gap-2"><button className={btnSecondary} onClick={() => navigate('/admin/files')} type="button"><Download aria-hidden="true" className="size-4" /> Files</button><button className={btnSecondary} disabled={!filtersValid} onClick={() => setExportOpen(true)} type="button"><Download aria-hidden="true" className="size-4" /> Export Excel</button><button className={btnSecondary} disabled title="Enrollment officer batch upload is not supported by the API" type="button"><Upload aria-hidden="true" className="size-4" /> Bulk Upload</button><button className={btnPrimary} onClick={() => setCreateOpen(true)} type="button"><Plus aria-hidden="true" className="size-4" /> Add Enrollment Officer</button></div></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><div><h1 className="text-2xl font-semibold tracking-[-0.48px]">Enrollment Officers</h1><p className="mt-0.5 text-sm text-muted-foreground">Manage enrollment officer accounts, ward access and enrollment activity.</p></div><div className="flex flex-wrap gap-2"><button className={btnSecondary} onClick={() => navigate('/admin/files')} type="button"><Download aria-hidden="true" className="size-4" /> Files</button><button className={btnSecondary} disabled={!filtersValid} onClick={() => setExportOpen(true)} type="button"><Download aria-hidden="true" className="size-4" /> Export Excel</button><button className={btnSecondary} onClick={() => setUploadOpen(true)} type="button"><Upload aria-hidden="true" className="size-4" /> Bulk Upload</button><button className={btnPrimary} onClick={() => setCreateOpen(true)} type="button"><Plus aria-hidden="true" className="size-4" /> Add Enrollment Officer</button></div></div>
 
       {activeJobId && <JobProgressPanel jobId={activeJobId} onClose={() => setActiveJobId(null)} />}
 
@@ -190,6 +192,21 @@ export function FieldWorkersView() {
       {exportOpen && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"><div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-card p-6 shadow-xl" role="dialog" aria-modal="true" aria-labelledby="export-field-workers-title"><div className="flex items-start justify-between gap-3"><div><h2 className="text-lg font-semibold" id="export-field-workers-title">Export enrollment officers</h2><p className="mt-1 text-sm text-muted-foreground">The Excel report will be prepared in the background and appear under Files.</p></div><button aria-label="Close export dialog" onClick={() => setExportOpen(false)} type="button"><X className="size-5" /></button></div>{exportFilterSummary.length > 0 ? <div className="mt-4 rounded-xl border border-border p-4"><p className="text-sm font-semibold">Filters included in this export</p><dl className="mt-3 grid gap-2">{exportFilterSummary.map((item) => <div className="flex justify-between gap-4 text-sm" key={item.label}><dt className="text-muted-foreground">{item.label}</dt><dd className="text-right font-medium">{item.value}</dd></div>)}</dl></div> : <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">This will export all enrollment officers.</p><p className="mt-1">No report filter is selected. Confirm only if you want the complete enrollment officer list.</p></div>}{debouncedSearch && <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"><p className="font-semibold">Search will be included in this export.</p><p className="mt-1">The current search text is sent to the export API so the spreadsheet matches your filtered list.</p></div>}<div className="mt-6 flex justify-end gap-2"><button className={btnSecondary} onClick={() => setExportOpen(false)} type="button">Cancel</button><button className={btnPrimary} disabled={exportMutation.isPending || !filtersValid} onClick={() => void handleExport()} type="button">{exportMutation.isPending ? 'Queueing…' : exportFilterSummary.length === 0 ? 'Export all enrollment officers' : 'Create filtered Excel file'}</button></div></div></div>}
 
       {createOpen && <CreateFieldWorkerDialog onCreated={setCredentials} onOpenChange={setCreateOpen} open />}
+      {uploadOpen && (
+        <BatchUploadFieldWorkersDialog
+          onImported={({ created, password }) => {
+            setUploadOpen(false)
+            setCredentials({
+              name: `${created} officers`,
+              email: 'See upload file',
+              password,
+              bulkCount: created,
+            })
+          }}
+          onOpenChange={setUploadOpen}
+          open
+        />
+      )}
       {credentials && <CredentialResultDialog onOpenChange={(nextOpen) => { if (!nextOpen) setCredentials(null) }} open result={credentials} title="Enrollment officer created" />}
     </div>
   )

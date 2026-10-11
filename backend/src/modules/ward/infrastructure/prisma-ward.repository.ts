@@ -69,6 +69,20 @@ export class PrismaWardRepository implements WardRepository {
     });
   }
 
+  findByLgaAndNames(lga: string, names: string[]): Promise<Ward[]> {
+    if (!lga.trim() || names.length === 0) {
+      return Promise.resolve([]);
+    }
+    return this.prisma.ward.findMany({
+      where: {
+        lga: { equals: lga, mode: 'insensitive' },
+        OR: names.map((name) => ({
+          name: { equals: name, mode: 'insensitive' as const },
+        })),
+      },
+    });
+  }
+
   findByCodes(codes: string[]): Promise<Ward[]> {
     if (codes.length === 0) {
       return Promise.resolve([]);

@@ -8,10 +8,16 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import {
   ApiAcceptedResponse,
   ApiBearerAuth,
+  ApiBody,
+  ApiConsumes,
   ApiCreatedResponse,
   ApiExtraModels,
   ApiOkResponse,
@@ -20,6 +26,9 @@ import {
   ApiTags,
   getSchemaPath,
 } from '@nestjs/swagger';
+import { BatchUploadResultDto } from '../../../platform/http/batch-upload.dto';
+import { assertSupportedBatchUpload } from '../../../platform/http/csv';
+import { BatchCreateFieldWorkersUseCase } from '../application/batch-create-field-workers.use-case';
 import {
   CurrentUser,
   type AuthenticatedUser,
@@ -60,6 +69,7 @@ export class UsersController {
     private readonly updateUser: UpdateUserUseCase,
     private readonly resetPassword: ResetPasswordUseCase,
     private readonly exportFieldWorkerReport: ExportFieldWorkerReportUseCase,
+    private readonly batchCreateFieldWorkers: BatchCreateFieldWorkersUseCase,
   ) {}
 
   @Post()
@@ -145,6 +155,50 @@ export class UsersController {
     @Body() body: ExportFieldWorkerReportRequestDto,
   ) {
     return this.exportFieldWorkerReport.execute(user, body);
+  }
+
+  @Post('batch')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 2 * 1024 * 1024 },
+    }),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file', 'password'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'CSV or Excel with columns: name, email, phone, optional status, lga, wards (pipe-separated ward names; empty wards = all wards).',
+        },
+        password: {
+          type: 'string',
+          description:
+            'Initial password applied to every created officer (they must change it on first login).',
+        },
+      },
+    },
+  })
+  @ApiOperation({
+    summary:
+      'Batch create enrollment officers from CSV or Excel with a shared initial password',
+  })
+  @ApiOkResponse({ type: BatchUploadResultDto })
+  batchCreate(
+    @UploadedFile() file?: Express.Multer.File,
+    @Body('password') password?: string,
+  ) {
+    const upload = assertSupportedBatchUpload(file);
+    return this.batchCreateFieldWorkers.execute(
+      upload.buffer,
+      password ?? '',
+      upload.originalname,
+    );
   }
 
   @Get(':id/detail')

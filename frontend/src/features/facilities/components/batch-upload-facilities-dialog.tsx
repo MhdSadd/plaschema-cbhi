@@ -1,4 +1,4 @@
-import { CircleCheck, FileSpreadsheet, LoaderCircle, Upload, X } from 'lucide-react'
+import { CircleCheck, Download, FileSpreadsheet, LoaderCircle, Upload, X } from 'lucide-react'
 import { Dialog } from 'radix-ui'
 import { useRef, useState, type ChangeEvent, type DragEvent } from 'react'
 import { toast } from 'sonner'
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 import { useUploadHealthFacilitiesBatch } from '../hooks'
+import { downloadFacilityUploadTemplate, FACILITY_UPLOAD_COLUMNS } from '../utils/batch-upload-template'
 
 const MAX_SIZE = 2 * 1024 * 1024
 const EXTENSIONS = ['.csv', '.xlsx', '.xls']
@@ -95,6 +96,13 @@ export function BatchUploadFacilitiesDialog({ open, onOpenChange }: BatchUploadF
           <div className="min-h-0 flex-1 overflow-y-auto p-6">
             {mutation.isError && <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{getApiErrorMessage(mutation.error, 'Unable to upload the facilities file.')}</div>}
             {!mutation.isPending && !result && <div className="flex flex-col gap-4">
+              <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground">
+                <p className="font-semibold text-foreground">Columns</p>
+                <p className="mt-1">{FACILITY_UPLOAD_COLUMNS}</p>
+              </div>
+              <Button className="self-start px-0 text-sm" onClick={downloadFacilityUploadTemplate} type="button" variant="link">
+                <Download aria-hidden="true" className="size-4" /> Download CSV template
+              </Button>
               <label className={cn('flex cursor-pointer flex-col items-center gap-4 rounded-xl border-2 border-dashed border-border p-8 text-center hover:bg-muted/30 focus-within:ring-2 focus-within:ring-ring', dragActive && 'border-primary bg-accent/50')} htmlFor="facilities-upload-file" onDragEnter={(event) => { event.preventDefault(); setDragActive(true) }} onDragLeave={() => setDragActive(false)} onDragOver={(event) => event.preventDefault()} onDrop={drop}>
                 <span className="flex size-12 items-center justify-center rounded-full bg-accent"><Upload aria-hidden="true" /></span><span><span className="block text-sm font-semibold">Drag and drop your facilities file here</span><span className="mt-1 block text-sm text-muted-foreground">or click to browse CSV or Excel files up to 2 MB</span></span><input accept=".csv,.xlsx,.xls" className="sr-only" id="facilities-upload-file" onChange={fileChange} ref={inputRef} type="file" />
               </label>
