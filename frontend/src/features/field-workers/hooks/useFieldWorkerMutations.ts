@@ -7,6 +7,7 @@ import {
   createFieldWorker,
   resetFieldWorkerPassword,
   updateFieldWorker,
+  uploadFieldWorkersBatch,
 } from '../services'
 
 export function useCreateFieldWorker() {
@@ -39,6 +40,31 @@ export function useUpdateFieldWorker() {
     },
     onError: (error) => {
       toast.error(getApiErrorMessage(error, 'Unable to update the enrollment officer.'))
+    },
+  })
+}
+
+export function useUploadFieldWorkersBatch() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: uploadFieldWorkersBatch,
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: ['field-workers'] })
+      if (result.failed > 0) {
+        toast.warning(
+          `${result.created} created; ${result.skipped} skipped; ${result.failed} failed.`,
+        )
+        return
+      }
+      if (result.created === 0 && result.skipped > 0) {
+        toast.success(`No new officers; ${result.skipped} already existed.`)
+        return
+      }
+      toast.success(`${result.created} enrollment officers imported successfully.`)
+    },
+    onError: (error) => {
+      toast.error(getApiErrorMessage(error, 'Unable to upload the enrollment officers file.'))
     },
   })
 }

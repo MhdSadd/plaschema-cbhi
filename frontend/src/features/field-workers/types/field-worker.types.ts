@@ -98,6 +98,23 @@ export interface FieldWorkerUserRecord {
   updatedAt: string
 }
 
+export interface FieldWorkerBatchError {
+  row: number
+  message: string
+}
+
+export interface FieldWorkerBatchResult {
+  created: number
+  skipped: number
+  failed: number
+  errors: FieldWorkerBatchError[]
+}
+
+export interface UploadFieldWorkersBatchVariables {
+  file: File
+  password: string
+}
+
 export interface CreateFieldWorkerPayload {
   name: string
   email: string

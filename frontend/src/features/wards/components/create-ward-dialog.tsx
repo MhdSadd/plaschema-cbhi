@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import { z } from 'zod'
 
 import { getApiErrorMessage } from '@/api'
+import { FormFieldLabel } from '@/components/admin/form-field-label'
 import { btnPrimary, btnSecondary } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -131,12 +132,9 @@ export function CreateWardDialog({
               )}
 
               <div className="flex flex-col gap-1.5">
-                <label
-                  className="text-sm font-semibold text-foreground"
-                  htmlFor="ward-name"
-                >
-                  Ward Name <span className="text-destructive">*</span>
-                </label>
+                <FormFieldLabel htmlFor="ward-name" required>
+                  Ward Name
+                </FormFieldLabel>
                 <Input
                   {...register('name', {
                     onChange: () => createMutation.reset(),
@@ -156,12 +154,9 @@ export function CreateWardDialog({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label
-                  className="text-sm font-semibold text-foreground"
-                  htmlFor="ward-state"
-                >
+                <FormFieldLabel htmlFor="ward-state">
                   State
-                </label>
+                </FormFieldLabel>
                 <Input
                   className="h-auto rounded-lg bg-muted/50 px-3 py-2.5"
                   id="ward-state"
@@ -171,12 +166,9 @@ export function CreateWardDialog({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label
-                  className="text-sm font-semibold text-foreground"
-                  htmlFor="ward-lga"
-                >
-                  LGA <span className="text-destructive">*</span>
-                </label>
+                <FormFieldLabel htmlFor="ward-lga" required>
+                  LGA
+                </FormFieldLabel>
                 <select
                   {...register('lga', {
                     onChange: () => createMutation.reset(),
@@ -203,12 +195,9 @@ export function CreateWardDialog({
               </div>
 
               <div className="flex flex-col gap-1.5">
-                <label
-                  className="text-sm font-semibold text-foreground"
-                  htmlFor="ward-status"
-                >
+                <FormFieldLabel htmlFor="ward-status" optional>
                   Status
-                </label>
+                </FormFieldLabel>
                 <select
                   {...register('status', {
                     onChange: () => createMutation.reset(),

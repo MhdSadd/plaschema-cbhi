@@ -8,6 +8,7 @@ import { z } from 'zod'
 
 import { getApiErrorMessage } from '@/api'
 import { SearchableFilterSelect } from '@/components/admin/searchable-filter-select'
+import { FormFieldLabel } from '@/components/admin/form-field-label'
 import { btnPrimary, btnSecondary } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -161,17 +162,22 @@ export function CreateFacilityDialog({ open, onOpenChange }: CreateFacilityDialo
               {mutation.isError && <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">{getApiErrorMessage(mutation.error, 'Unable to create the facility.')}</div>}
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="flex min-w-0 flex-col gap-1.5">
-                  <label className="text-sm font-semibold" htmlFor="facility-name">Facility Name</label>
+                  <FormFieldLabel htmlFor="facility-name" required>
+                    Facility Name
+                  </FormFieldLabel>
                   <Input {...register('name', { onChange: () => mutation.reset() })} aria-invalid={Boolean(errors.name)} autoFocus id="facility-name" placeholder="e.g. Tudun Wada PHC" />
                   {errors.name?.message && <p className="text-xs text-destructive">{errors.name.message}</p>}
                 </div>
                 <div className="min-w-0">
+                  <FormFieldLabel className="mb-1.5 block text-sm font-semibold text-foreground" required>
+                    Ward
+                  </FormFieldLabel>
                   <SearchableFilterSelect
                     allLabel="Select a ward"
                     emptyText={lga ? `No wards found in ${lga}.` : 'No wards found.'}
                     hasMore={Boolean(wardsQuery.hasNextPage)}
                     label="Ward"
-                    labelClassName="text-sm font-semibold text-foreground"
+                    labelClassName="sr-only"
                     loading={wardsQuery.isFetching && !wardsQuery.isFetchingNextPage}
                     loadingMore={wardsQuery.isFetchingNextPage}
                     onLoadMore={() => void wardsQuery.fetchNextPage()}
@@ -193,16 +199,23 @@ export function CreateFacilityDialog({ open, onOpenChange }: CreateFacilityDialo
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5"><label className="text-sm font-semibold" htmlFor="facility-state">State</label><Input id="facility-state" readOnly value="Plateau" /></div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-sm font-semibold" htmlFor="facility-lga">LGA</label>
+                  <FormFieldLabel htmlFor="facility-state">
+                    State
+                  </FormFieldLabel>
+                  <Input id="facility-state" readOnly value="Plateau" />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <FormFieldLabel htmlFor="facility-lga" optional>
+                    LGA
+                  </FormFieldLabel>
                   <select
                     className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     id="facility-lga"
                     onChange={(event) => changeLga(event.target.value)}
                     value={lga}
                   >
-                    <option value="">All LGAs</option>
+                    <option value="">Optional</option>
                     {PLATEAU_LGAS.map((item) => (
                       <option key={item} value={item}>
                         {item}
@@ -211,10 +224,26 @@ export function CreateFacilityDialog({ open, onOpenChange }: CreateFacilityDialo
                   </select>
                 </div>
               </div>
-              <div className="flex flex-col gap-1.5"><label className="text-sm font-semibold" htmlFor="facility-type">Facility Type</label><Input {...register('type', { onChange: () => mutation.reset() })} aria-invalid={Boolean(errors.type)} id="facility-type" />{errors.type?.message && <p className="text-xs text-destructive">{errors.type.message}</p>}</div>
+              <div className="flex flex-col gap-1.5">
+                <FormFieldLabel htmlFor="facility-type" required>
+                  Facility Type
+                </FormFieldLabel>
+                <Input {...register('type', { onChange: () => mutation.reset() })} aria-invalid={Boolean(errors.type)} id="facility-type" placeholder="e.g. Primary Health Care" />
+                {errors.type?.message && <p className="text-xs text-destructive">{errors.type.message}</p>}
+              </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5"><label className="text-sm font-semibold" htmlFor="facility-level">Level</label><select {...register('level')} className="h-9 rounded-lg border border-input bg-background px-3 text-sm" id="facility-level"><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="tertiary">Tertiary</option></select></div>
-                <div className="flex flex-col gap-1.5"><label className="text-sm font-semibold" htmlFor="facility-status">Status</label><select {...register('status')} className="h-9 rounded-lg border border-input bg-background px-3 text-sm" id="facility-status"><option value="active">Active</option><option value="inactive">Inactive</option></select></div>
+                <div className="flex flex-col gap-1.5">
+                  <FormFieldLabel htmlFor="facility-level" required>
+                    Level
+                  </FormFieldLabel>
+                  <select {...register('level')} className="h-9 rounded-lg border border-input bg-background px-3 text-sm" id="facility-level"><option value="primary">Primary</option><option value="secondary">Secondary</option><option value="tertiary">Tertiary</option></select>
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <FormFieldLabel htmlFor="facility-status" optional>
+                    Status
+                  </FormFieldLabel>
+                  <select {...register('status')} className="h-9 rounded-lg border border-input bg-background px-3 text-sm" id="facility-status"><option value="active">Active</option><option value="inactive">Inactive</option></select>
+                </div>
               </div>
             </div>
             <div className="flex gap-3 px-6 pb-6"><Button className={`${btnSecondary} flex-1`} disabled={mutation.isPending} onClick={() => changeOpen(false)} type="button" variant="outline">Cancel</Button><Button className={`${btnPrimary} flex-1`} disabled={mutation.isPending || wardsQuery.isError} type="submit">{mutation.isPending ? <><LoaderCircle aria-hidden="true" className="animate-spin" /> Creating…</> : 'Add Facility'}</Button></div>

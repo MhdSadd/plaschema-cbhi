@@ -2,6 +2,7 @@ import { ChevronsUpDown, LoaderCircle, Search } from 'lucide-react'
 import { Popover } from 'radix-ui'
 import { useState } from 'react'
 
+import { FormFieldLabel } from '@/components/admin/form-field-label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PLATEAU_LGAS } from '@/lib/geography'
 import type { WardListItem } from '@/features/wards/types'
@@ -47,7 +48,7 @@ export function FieldWorkerWardAccessFields({
   const [wardPickerOpen, setWardPickerOpen] = useState(false)
 
   const wardPickerLabel = selectedWardIds.length === 0
-    ? 'Select wards'
+    ? 'Optional'
     : `${selectedWardIds.length} ward${selectedWardIds.length === 1 ? '' : 's'} selected`
 
   function changeLga(nextLga: string) {
@@ -68,9 +69,9 @@ export function FieldWorkerWardAccessFields({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="min-w-0">
-          <label className="mb-1.5 block text-sm font-semibold" htmlFor="field-worker-lga">
+          <FormFieldLabel className="mb-1.5 block text-sm font-semibold" htmlFor="field-worker-lga" optional>
             LGA
-          </label>
+          </FormFieldLabel>
           <select
             className="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
             disabled={disabled}
@@ -78,7 +79,7 @@ export function FieldWorkerWardAccessFields({
             onChange={(event) => changeLga(event.target.value)}
             value={lga}
           >
-            <option value="">Select an LGA</option>
+            <option value="">Optional</option>
             {PLATEAU_LGAS.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -87,7 +88,9 @@ export function FieldWorkerWardAccessFields({
           </select>
         </div>
         <div className="min-w-0">
-          <span className="mb-1.5 block text-sm font-semibold">Wards</span>
+          <FormFieldLabel className="mb-1.5 block text-sm font-semibold" optional>
+            Wards
+          </FormFieldLabel>
           <Popover.Root
             modal={false}
             onOpenChange={(nextOpen) => {

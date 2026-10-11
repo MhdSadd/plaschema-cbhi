@@ -10,6 +10,7 @@ export interface CredentialResult {
   name: string
   email: string
   password: string
+  bulkCount?: number
 }
 
 interface CredentialResultDialogProps {
@@ -30,9 +31,10 @@ export function CredentialResultDialog({
   async function copyCredentials() {
     if (!result) return
     try {
-      await navigator.clipboard.writeText(
-        `Email: ${result.email}\nPassword: ${result.password}`,
-      )
+      const text = result.bulkCount
+        ? `${result.bulkCount} enrollment officers created.\nShared initial password: ${result.password}`
+        : `Email: ${result.email}\nPassword: ${result.password}`
+      await navigator.clipboard.writeText(text)
       setCopied(true)
       toast.success('Credentials copied.')
     } catch {
@@ -64,14 +66,28 @@ export function CredentialResultDialog({
           {result && (
             <div className="space-y-4 px-6 py-5">
               <div className="rounded-xl border border-border bg-muted/30 p-4">
-                <p className="text-xs font-medium text-muted-foreground">Enrollment officer</p>
-                <p className="mt-1 font-semibold">{result.name}</p>
-                <div className="mt-4 grid gap-3">
-                  <div><p className="text-xs text-muted-foreground">Email</p><p className="break-all font-mono text-sm">{result.email}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Password</p><p className="break-all font-mono text-sm font-semibold">{result.password}</p></div>
-                </div>
+                {result.bulkCount ? (
+                  <>
+                    <p className="text-xs font-medium text-muted-foreground">Bulk import</p>
+                    <p className="mt-1 font-semibold">{result.bulkCount} enrollment officers created</p>
+                    <div className="mt-4">
+                      <p className="text-xs text-muted-foreground">Shared initial password</p>
+                      <p className="break-all font-mono text-sm font-semibold">{result.password}</p>
+                    </div>
+                    <p className="mt-3 text-xs text-muted-foreground">Each officer’s email is in the upload file. They must change this password on first login.</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-xs font-medium text-muted-foreground">Enrollment officer</p>
+                    <p className="mt-1 font-semibold">{result.name}</p>
+                    <div className="mt-4 grid gap-3">
+                      <div><p className="text-xs text-muted-foreground">Email</p><p className="break-all font-mono text-sm">{result.email}</p></div>
+                      <div><p className="text-xs text-muted-foreground">Password</p><p className="break-all font-mono text-sm font-semibold">{result.password}</p></div>
+                    </div>
+                  </>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground">Share these credentials securely with the enrollment officer. Closing this dialog clears the password from the screen.</p>
+              <p className="text-xs text-muted-foreground">Share credentials securely. Closing this dialog clears the password from the screen.</p>
             </div>
           )}
           <div className="flex gap-3 px-6 pb-6">

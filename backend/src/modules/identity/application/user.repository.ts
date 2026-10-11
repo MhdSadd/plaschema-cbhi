@@ -52,6 +52,7 @@ export interface UserRepository {
   create(input: CreateUserInput): Promise<PublicUser>;
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
+  findExistingEmails(emails: string[]): Promise<Set<string>>;
   list(query: ListUsersQuery): Promise<PaginatedUsers>;
   update(id: string, input: UpdateUserInput): Promise<PublicUser>;
   wardIdsExist(wardIds: string[]): Promise<boolean>;
