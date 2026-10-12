@@ -10,6 +10,7 @@ import { getApiErrorMessage } from '@/api'
 import { btnPrimary, btnSecondary } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { lgaLabelsMatch } from '@/lib/geography'
 import { useWardOptions } from '@/features/wards/hooks'
 import type { WardListItem } from '@/features/wards/types'
 
@@ -36,7 +37,7 @@ interface EditFieldWorkerDialogProps {
 function initialLga(wards: FieldWorkerWard[]): string {
   if (wards.length === 0) return ''
   const first = wards[0]?.lga
-  return wards.every((ward) => ward.lga === first) ? (first ?? '') : (first ?? '')
+  return wards.every((ward) => lgaLabelsMatch(ward.lga, first ?? '')) ? (first ?? '') : (first ?? '')
 }
 
 export function EditFieldWorkerDialog({ detail, open, onOpenChange }: EditFieldWorkerDialogProps) {
@@ -73,7 +74,7 @@ export function EditFieldWorkerDialog({ detail, open, onOpenChange }: EditFieldW
       byId.set(ward.id, ward)
     }
     const values = [...byId.values()]
-    return lga ? values.filter((ward) => ward.lga === lga) : values
+    return lga ? values.filter((ward) => lgaLabelsMatch(ward.lga, lga)) : values
   }, [detail.wards, lga, wardsQuery.data])
 
   useEffect(() => {

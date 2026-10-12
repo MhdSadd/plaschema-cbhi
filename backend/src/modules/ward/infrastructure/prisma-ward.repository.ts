@@ -6,6 +6,7 @@ import {
 } from '../../../platform/http/list-cursor';
 import { toQueryInt } from '../../../platform/http/query-transforms';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
+import { wardLgaFilterWhere } from '../../../shared/lga-label';
 import { WARD_STATE, type Ward, type WardDetailAggregates, type WardListItem } from '../domain/ward';
 import {
   lastNMonthsInLagos,
@@ -56,7 +57,7 @@ export class PrismaWardRepository implements WardRepository {
 
   findOneByLga(lga: string): Promise<Ward | null> {
     return this.prisma.ward.findFirst({
-      where: { lga: { equals: lga, mode: 'insensitive' } },
+      where: wardLgaFilterWhere(lga),
     });
   }
 
@@ -75,10 +76,14 @@ export class PrismaWardRepository implements WardRepository {
     }
     return this.prisma.ward.findMany({
       where: {
-        lga: { equals: lga, mode: 'insensitive' },
-        OR: names.map((name) => ({
-          name: { equals: name, mode: 'insensitive' as const },
-        })),
+        AND: [
+          wardLgaFilterWhere(lga),
+          {
+            OR: names.map((name) => ({
+              name: { equals: name, mode: 'insensitive' as const },
+            })),
+          },
+        ],
       },
     });
   }
@@ -107,9 +112,7 @@ export class PrismaWardRepository implements WardRepository {
     const limit = toQueryInt(query.limit, 50, { min: 1, max: 100 });
     const filterWhere = {
       ...(query.status ? { status: query.status } : {}),
-      ...(query.lga
-        ? { lga: { equals: query.lga, mode: 'insensitive' as const } }
-        : {}),
+      ...(query.lga ? wardLgaFilterWhere(query.lga) : {}),
       ...(query.search
         ? {
             OR: [

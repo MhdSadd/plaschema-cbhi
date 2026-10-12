@@ -1,3 +1,4 @@
+import { lgaLabelsMatch } from '@/lib/lga-label'
 import type { EnrollmentFormValues, FieldWorkerDetailStats, LocalEnrollmentRecord, ReferenceFacility, ReferenceWard } from '../types'
 
 export const BENEFICIARY_CATEGORIES = [
@@ -98,11 +99,11 @@ export function getResidenceWardsForForm(
     return geography.selectableWards
   }
   if (!selectedLga) return []
-  return geography.selectableWards.filter((ward) => ward.lga === selectedLga)
+  return geography.selectableWards.filter((ward) => lgaLabelsMatch(ward.lga, selectedLga))
 }
 
 export function resolveWardId(lga: string, currentWardId: string, wards: ReferenceWard[]) {
-  const availableWards = wards.filter((ward) => ward.status === 'active' && ward.lga === lga)
+  const availableWards = wards.filter((ward) => ward.status === 'active' && lgaLabelsMatch(ward.lga, lga))
   if (availableWards.some((ward) => ward.id === currentWardId)) return currentWardId
   return availableWards.length === 1 ? availableWards[0].id : ''
 }
