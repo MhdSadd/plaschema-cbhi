@@ -12,7 +12,7 @@ import { FormFieldLabel } from '@/components/admin/form-field-label'
 import { btnPrimary, btnSecondary } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { PLATEAU_LGAS } from '@/lib/geography'
+import { lgaLabelsMatch, PLATEAU_LGAS } from '@/lib/geography'
 import { useWardOptions } from '@/features/wards/hooks'
 import type { WardListItem } from '@/features/wards/types'
 
@@ -145,7 +145,7 @@ export function CreateFacilityDialog({ open, onOpenChange }: CreateFacilityDialo
     : null
 
   const wardOptions = lga
-    ? wards.filter((ward) => ward.lga === lga)
+    ? wards.filter((ward) => lgaLabelsMatch(ward.lga, lga))
     : wards
 
   return (

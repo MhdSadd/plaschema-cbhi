@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useHealthFacilities } from '@/features/facilities/hooks'
 import { useWardOptions } from '@/features/wards/hooks'
+import { lgaLabelsMatch } from '@/lib/geography'
 import type { WardListItem } from '@/features/wards/types'
 
 import { useUpdateEnrollmentProfile } from '../hooks'
@@ -167,7 +168,7 @@ export function EditEnrollmentDialog({ record, open, onOpenChange }: EditEnrollm
       status: 'active',
     }]])
     for (const ward of wardsQuery.data?.pages.flatMap((page) => page.items) ?? []) {
-      if (ward.lga === beneficiaryLga) byId.set(ward.id, ward)
+      if (lgaLabelsMatch(ward.lga, beneficiaryLga)) byId.set(ward.id, ward)
     }
     return [...byId.values()]
   }, [beneficiaryLga, record.ward, wardsQuery.data])

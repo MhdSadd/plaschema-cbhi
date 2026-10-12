@@ -10,6 +10,7 @@ import { FormFieldLabel, RequiredMark } from '@/components/admin/form-field-labe
 import { btnPrimary, btnSecondary } from '@/components/admin/styles'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { lgaLabelsMatch } from '@/lib/geography'
 import { useWardOptions } from '@/features/wards/hooks'
 
 import { useCreateFieldWorker } from '../hooks'
@@ -59,7 +60,7 @@ export function CreateFieldWorkerDialog({ open, onCreated, onOpenChange }: Creat
 
   const wards = useMemo(() => {
     const items = wardsQuery.data?.pages.flatMap((page) => page.items) ?? []
-    return lga ? items.filter((ward) => ward.lga === lga) : items
+    return lga ? items.filter((ward) => lgaLabelsMatch(ward.lga, lga)) : items
   }, [lga, wardsQuery.data])
 
   useEffect(() => {

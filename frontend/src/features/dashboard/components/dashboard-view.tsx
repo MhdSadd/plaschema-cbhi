@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useWardOptions } from '@/features/wards/hooks'
 import type { WardListItem } from '@/features/wards/types'
-import { PLATEAU_LGAS } from '@/lib/geography'
+import { lgaLabelsMatch, PLATEAU_LGAS } from '@/lib/geography'
 
 import { useDashboard } from '../hooks'
 import type { DashboardPeriod, DashboardTrendGranularity } from '../types'
@@ -43,7 +43,9 @@ export function DashboardView() {
   const wardsQuery = useWardOptions(wardSearch.trim())
   const wards = useMemo(() => {
     const values = new Map<string, WardListItem>()
-    for (const ward of wardsQuery.data?.pages.flatMap((page) => page.items) ?? []) if (!lga || ward.lga === lga) values.set(ward.id, ward)
+    for (const ward of wardsQuery.data?.pages.flatMap((page) => page.items) ?? []) {
+      if (!lga || lgaLabelsMatch(ward.lga, lga)) values.set(ward.id, ward)
+    }
     return [...values.values()]
   }, [lga, wardsQuery.data])
   const params = useMemo(() => ({ lga: lga || undefined, wardId: selectedWard?.id, period, trend }), [lga, period, selectedWard?.id, trend])
