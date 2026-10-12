@@ -159,7 +159,8 @@ Every queued enrollment on the device has one of these statuses:
 | `DUPLICATE_ENROLLMENT` | Failed + review, or success if same draft |
 | `VALIDATION_ERROR`, `UPLOAD_NOT_FOUND`, `FORBIDDEN_WARD` | Failed, needs review |
 | `HOUSEHOLD_HEAD_NOT_SYNCED` | pending, retry after head syncs |
-| `HOUSEHOLD_HEAD_EXISTS`, `HOUSEHOLD_CODE_TAKEN` | Failed + review (head already created or code clash) |
+| `HOUSEHOLD_HEAD_EXISTS` | Failed + review (head already created for this household) |
+| ~~`HOUSEHOLD_CODE_TAKEN`~~ (head) | **Removed** — server remaps to next ward suffix; see [`native-mobile-household-code-update-handoff.md`](./native-mobile-household-code-update-handoff.md) |
 | `HOUSEHOLD_NOT_FOUND` | Failed + review (bad householdId) |
 | `401` / expired JWT | Stop sync, prompt re-login |
 

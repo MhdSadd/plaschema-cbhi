@@ -107,6 +107,8 @@ export type Enrollment = {
   updatedAt: Date;
   /** True when this response came from an idempotent replay. */
   idempotentReplay?: boolean;
+  /** True when the server assigned a different household code than the client sent (head create). */
+  householdCodeRemapped?: boolean;
 };
 
 export type PrintedStatusFilter = 'all' | 'printed' | 'not_printed';
