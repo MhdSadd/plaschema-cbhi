@@ -3,6 +3,7 @@ import { Popover } from 'radix-ui'
 import { useState } from 'react'
 
 import { FormFieldLabel } from '@/components/admin/form-field-label'
+import { StatusBadge } from '@/components/admin/status-badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PLATEAU_LGAS } from '@/lib/geography'
 import type { WardListItem } from '@/features/wards/types'
@@ -32,6 +33,9 @@ interface FieldWorkerWardAccessFieldsProps {
   disabled?: boolean
   emptySelectionNote: string
 }
+
+const INACTIVE_WARD_ASSIGNMENT_TIP =
+  'This ward is inactive. Only active wards can be assigned to enrollment officers.'
 
 export function FieldWorkerWardAccessFields({
   lga,
@@ -147,11 +151,34 @@ export function FieldWorkerWardAccessFields({
                     </div>
                   ) : wards.map((ward) => {
                     const selected = selectedWardIds.includes(ward.id)
+                    const inactive = ward.status === 'inactive'
+                    const assignBlocked = inactive && !selected
                     const checkboxId = `field-worker-ward-${ward.id}`
                     return (
-                      <label className="flex cursor-pointer items-center gap-3 border-b border-border px-3 py-2.5 last:border-0 hover:bg-muted/40" htmlFor={checkboxId} key={ward.id}>
-                        <Checkbox checked={selected} id={checkboxId} onCheckedChange={(checked) => onToggleWard(ward.id, checked === true)} />
-                        <span className="text-sm font-medium">{ward.name}</span>
+                      <label
+                        className={`flex items-center gap-3 border-b border-border px-3 py-2.5 last:border-0 ${assignBlocked ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:bg-muted/40'}`}
+                        htmlFor={checkboxId}
+                        key={ward.id}
+                        title={inactive ? INACTIVE_WARD_ASSIGNMENT_TIP : undefined}
+                      >
+                        <Checkbox
+                          checked={selected}
+                          disabled={assignBlocked}
+                          id={checkboxId}
+                          onCheckedChange={(checked) => {
+                            if (inactive && checked === true) return
+                            onToggleWard(ward.id, checked === true)
+                          }}
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="text-sm font-medium">{ward.name}</span>
+                          {inactive && (
+                            <span className="mt-0.5 block text-xs text-muted-foreground">
+                              Inactive — only active wards can be assigned.
+                            </span>
+                          )}
+                        </span>
+                        {inactive && <StatusBadge status="Inactive" />}
                       </label>
                     )
                   })}

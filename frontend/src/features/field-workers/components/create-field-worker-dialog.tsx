@@ -91,6 +91,7 @@ export function CreateFieldWorkerDialog({ open, onCreated, onOpenChange }: Creat
   }
 
   function toggleWard(id: string, checked: boolean) {
+    if (checked && wards.find((ward) => ward.id === id)?.status === 'inactive') return
     const next = checked
       ? [...new Set([...selectedWardIds, id])]
       : selectedWardIds.filter((wardId) => wardId !== id)
