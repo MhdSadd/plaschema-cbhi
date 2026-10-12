@@ -186,6 +186,7 @@ export interface CreateHouseholdEnrollmentResponse extends CreateEnrollmentRespo
   householdRole: HouseholdRole | null
   memberSequence: number | null
   householdCode: string | null
+  householdCodeRemapped?: boolean
 }
 
 export interface HouseholdDraftMember {

@@ -37,6 +37,7 @@ import { fieldWorkerCanAccessWard } from '../../enrollment/application/field-wor
 import { PassportPrintService } from '../../enrollment/application/passport-print.service';
 import { headEnrollmentIdFromHouseholdCode } from '../../enrollment/domain/enrollment-id';
 import type { HouseholdRole } from '../domain/household';
+import { HouseholdCodeAllocationService } from './household-code-allocation.service';
 import {
   HOUSEHOLD_REPOSITORY,
   type HouseholdRepository,
@@ -67,6 +68,7 @@ export class CreateHouseholdEnrollmentUseCase {
     private readonly checkDuplicate: CheckEnrollmentDuplicateUseCase,
     private readonly recordActivity: RecordActivityUseCase,
     private readonly passportPrint: PassportPrintService,
+    private readonly householdCodeAllocation: HouseholdCodeAllocationService,
   ) {}
 
   async execute(
@@ -120,83 +122,116 @@ export class CreateHouseholdEnrollmentUseCase {
       );
     }
 
-    const codeClash = await this.households.findByWardAndCode(
-      input.wardId,
-      input.household.householdCode.trim(),
-    );
-    if (codeClash && codeClash.householdLocalId !== input.household.householdLocalId) {
-      throw new AppError(
-        'HOUSEHOLD_CODE_TAKEN',
-        'A household with this code already exists in the ward',
-        409,
-      );
-    }
-
-    let enrollmentId: string;
-    try {
-      enrollmentId = headEnrollmentIdFromHouseholdCode(
-        input.household.householdCode,
-      );
-    } catch (error) {
+    const ward = await this.wards.findById(input.wardId);
+    if (!ward?.code?.trim()) {
       throw new AppError(
         'VALIDATION_ERROR',
-        error instanceof Error ? error.message : 'Invalid householdCode',
+        'Ward code is required to allocate a household ID',
         400,
       );
     }
 
-    const enrollmentIdTaken = await this.enrollments.findByPublicEnrollmentId(
-      enrollmentId,
-    );
-    if (enrollmentIdTaken) {
-      throw new AppError(
-        'ENROLLMENT_ID_TAKEN',
-        'This enrollment ID is already in use',
-        409,
+    const householdLocalId = input.household.householdLocalId;
+    const isHouseholdCodeAvailable = async (code: string) => {
+      const existing = await this.households.findByWardAndCode(
+        input.wardId,
+        code,
       );
-    }
+      return (
+        !existing || existing.householdLocalId === householdLocalId
+      );
+    };
+    const isEnrollmentIdAvailable = async (enrollmentId: string) =>
+      !(await this.enrollments.findByPublicEnrollmentId(enrollmentId));
 
-    try {
-      const result = await this.households.createHeadEnrollment({
-        household: {
-          id: existingHousehold?.id ?? createUuidV7(),
-          householdLocalId: input.household.householdLocalId,
-          householdCode: input.household.householdCode.trim(),
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      let resolved: { householdCode: string; remapped: boolean };
+      try {
+        resolved = await this.householdCodeAllocation.resolveHeadHouseholdCode({
           wardId: input.wardId,
-          residentialAddress:
-            optionalCollapsed(input.household.sharedResidentialAddress) ??
-            prepared.residentialAddress,
-        },
-        enrollment: {
-          ...prepared.enrollmentData,
-          enrollmentId,
-          householdRole: 'head',
-        },
-      });
-
-      await this.recordActivity.execute({
-        category: 'enrollment',
-        action: 'created',
-        summary: `${result.enrollment.firstName} ${result.enrollment.lastName} enrolled as household head by ${actor.name}`,
-        wardId: result.enrollment.wardId,
-        actorUserId: actor.id,
-        enrollmentId: result.enrollment.id,
-      });
-
-      return result.enrollment;
-    } catch (error) {
-      if (
-        error instanceof Error &&
-        error.message === 'HOUSEHOLD_HEAD_EXISTS'
-      ) {
+          wardCode: ward.code.trim(),
+          requestedCode: input.household.householdCode,
+          householdLocalId,
+          isHouseholdCodeAvailable,
+          isEnrollmentIdAvailable,
+        });
+      } catch (error) {
+        if (error instanceof AppError) {
+          throw error;
+        }
         throw new AppError(
-          'HOUSEHOLD_HEAD_EXISTS',
-          'This household already has a head enrollment',
-          409,
+          'VALIDATION_ERROR',
+          error instanceof Error ? error.message : 'Invalid householdCode',
+          400,
         );
       }
-      return this.handleUniqueViolation(error, input.idempotencyId, prepared);
+
+      const enrollmentId = headEnrollmentIdFromHouseholdCode(
+        resolved.householdCode,
+      );
+
+      try {
+        const result = await this.households.createHeadEnrollment({
+          household: {
+            id: existingHousehold?.id ?? createUuidV7(),
+            householdLocalId,
+            householdCode: resolved.householdCode,
+            wardId: input.wardId,
+            residentialAddress:
+              optionalCollapsed(input.household.sharedResidentialAddress) ??
+              prepared.residentialAddress,
+          },
+          enrollment: {
+            ...prepared.enrollmentData,
+            enrollmentId,
+            householdRole: 'head',
+          },
+        });
+
+        await this.recordActivity.execute({
+          category: 'enrollment',
+          action: 'created',
+          summary: `${result.enrollment.firstName} ${result.enrollment.lastName} enrolled as household head by ${actor.name}`,
+          wardId: result.enrollment.wardId,
+          actorUserId: actor.id,
+          enrollmentId: result.enrollment.id,
+        });
+
+        return {
+          ...result.enrollment,
+          household: {
+            id: result.household.id,
+            householdCode: result.household.householdCode,
+          },
+          householdCodeRemapped: resolved.remapped,
+        };
+      } catch (error) {
+        if (
+          error instanceof Error &&
+          error.message === 'HOUSEHOLD_HEAD_EXISTS'
+        ) {
+          throw new AppError(
+            'HOUSEHOLD_HEAD_EXISTS',
+            'This household already has a head enrollment',
+            409,
+          );
+        }
+        if (this.isUniqueConstraintViolation(error) && attempt < 4) {
+          continue;
+        }
+        return this.handleUniqueViolation(
+          error,
+          input.idempotencyId,
+          prepared,
+        );
+      }
     }
+
+    throw new AppError(
+      'HOUSEHOLD_CODE_EXHAUSTED',
+      'Unable to allocate a unique household code for this ward. Try again.',
+      503,
+    );
   }
 
   private async createMember(
@@ -416,6 +451,14 @@ export class CreateHouseholdEnrollmentUseCase {
         residentialAddress,
       },
     };
+  }
+
+  private isUniqueConstraintViolation(error: unknown): boolean {
+    const code =
+      error && typeof error === 'object' && 'code' in error
+        ? String((error as { code: unknown }).code)
+        : '';
+    return code === 'P2002';
   }
 
   private async handleUniqueViolation(

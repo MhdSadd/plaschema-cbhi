@@ -109,6 +109,30 @@ async function uploadPurpose(record: LocalEnrollmentRecord, purpose: 'passport' 
   return presigned.objectKey
 }
 
+async function applyHouseholdCodeToLocalRecords(
+  ownerUserId: string,
+  householdLocalId: string,
+  householdCode: string,
+) {
+  const related = await offlineDb.enrollments
+    .where('ownerUserId')
+    .equals(ownerUserId)
+    .filter((row) => row.householdLocalId === householdLocalId)
+    .toArray()
+  if (related.length === 0) return
+
+  await offlineDb.enrollments.bulkUpdate(related.map((row) => ({
+    key: row.localId,
+    changes: { householdCode },
+  })))
+
+  const householdKey = `${ownerUserId}:${householdLocalId}`
+  const cached = await offlineDb.households.get(householdKey)
+  if (cached) {
+    await offlineDb.households.put({ ...cached, householdCode, updatedAt: new Date().toISOString() })
+  }
+}
+
 async function persistSuccessfulSync(
   record: LocalEnrollmentRecord,
   acknowledgement: {
@@ -117,10 +141,13 @@ async function persistSuccessfulSync(
     status: LocalEnrollmentRecord['serverStatus']
     householdId?: string | null
     memberSequence?: number | null
+    householdCode?: string | null
+    householdCodeRemapped?: boolean
   },
 ) {
   const syncedAt = new Date().toISOString()
   await offlineDb.transaction('rw', offlineDb.enrollments, offlineDb.syncState, offlineDb.households, async () => {
+    const canonicalHouseholdCode = acknowledgement.householdCode ?? record.householdCode
     await offlineDb.enrollments.update(record.localId, {
       syncStatus: 'synced',
       uploadStage: 'complete',
@@ -129,6 +156,7 @@ async function persistSuccessfulSync(
       serverStatus: acknowledgement.status,
       memberSequence: acknowledgement.memberSequence ?? record.memberSequence,
       householdId: acknowledgement.householdId ?? record.householdId,
+      ...(canonicalHouseholdCode ? { householdCode: canonicalHouseholdCode } : {}),
       syncedAt,
       attemptCount: 0,
       retryAt: undefined,
@@ -145,11 +173,24 @@ async function persistSuccessfulSync(
         await offlineDb.households.put({
           ...cached,
           id: acknowledgement.householdId ?? cached.id,
+          ...(canonicalHouseholdCode ? { householdCode: canonicalHouseholdCode } : {}),
           memberCount: record.householdRole === 'member'
             ? Math.max(cached.memberCount, acknowledgement.memberSequence ?? cached.memberCount)
             : cached.memberCount,
           updatedAt: syncedAt,
         })
+      }
+
+      if (
+        record.householdLocalId
+        && canonicalHouseholdCode
+        && (acknowledgement.householdCodeRemapped || record.householdRole === 'head')
+      ) {
+        await applyHouseholdCodeToLocalRecords(
+          record.ownerUserId,
+          record.householdLocalId,
+          canonicalHouseholdCode,
+        )
       }
 
       if (record.householdRole === 'head' && acknowledgement.householdId) {

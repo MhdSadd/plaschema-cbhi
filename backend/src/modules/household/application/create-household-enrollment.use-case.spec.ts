@@ -8,6 +8,7 @@ import type { Enrollment } from '../../enrollment/domain/enrollment';
 import type { HealthFacilityRepository } from '../../health-facility/application/health-facility.repository';
 import type { UserRepository } from '../../identity/application/user.repository';
 import type { WardRepository } from '../../ward/application/ward.repository';
+import type { HouseholdCodeAllocationService } from './household-code-allocation.service';
 import { CreateHouseholdEnrollmentUseCase } from './create-household-enrollment.use-case';
 import type { HouseholdRepository } from './household.repository';
 
@@ -111,6 +112,9 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
   let checkDuplicate: jest.Mocked<CheckEnrollmentDuplicateUseCase>;
   let recordActivity: { execute: jest.Mock };
   let passportPrint: jest.Mocked<PassportPrintService>;
+  let householdCodeAllocation: jest.Mocked<
+    Pick<HouseholdCodeAllocationService, 'resolveHeadHouseholdCode'>
+  >;
   let useCase: CreateHouseholdEnrollmentUseCase;
 
   beforeEach(() => {
@@ -154,6 +158,10 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
       ensureStored: jest.fn(),
     } as unknown as jest.Mocked<PassportPrintService>;
 
+    householdCodeAllocation = {
+      resolveHeadHouseholdCode: jest.fn(),
+    };
+
     useCase = new CreateHouseholdEnrollmentUseCase(
       households,
       enrollments,
@@ -164,6 +172,7 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
       checkDuplicate,
       recordActivity as unknown as RecordActivityUseCase,
       passportPrint,
+      householdCodeAllocation as unknown as HouseholdCodeAllocationService,
     );
   });
 
@@ -193,6 +202,10 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
     households.findByLocalId.mockResolvedValue(null);
     households.findByWardAndCode.mockResolvedValue(null);
     enrollments.findByPublicEnrollmentId.mockResolvedValue(null);
+    householdCodeAllocation.resolveHeadHouseholdCode.mockResolvedValue({
+      householdCode: 'JOS-VOM-001',
+      remapped: false,
+    });
   }
 
   it('replays an existing idempotent household enrollment', async () => {
@@ -263,6 +276,43 @@ describe('CreateHouseholdEnrollmentUseCase', () => {
     expect(result.enrollmentId).toBe('PL-CBHI-JOS-VOM-001');
     expect(households.createHeadEnrollment).toHaveBeenCalled();
     expect(recordActivity.execute).toHaveBeenCalled();
+  });
+
+  it('remaps a duplicate household code to the next available suffix', async () => {
+    mockHappyPath();
+    householdCodeAllocation.resolveHeadHouseholdCode.mockResolvedValue({
+      householdCode: 'JOS-VOM-002',
+      remapped: true,
+    });
+    const created = enrollmentFixture({
+      enrollmentId: 'PL-CBHI-JOS-VOM-002',
+      household: { id: '01900000-0000-7000-8000-000000000020', householdCode: 'JOS-VOM-002' },
+    });
+    households.createHeadEnrollment.mockResolvedValue({
+      household: {
+        id: '01900000-0000-7000-8000-000000000020',
+        householdLocalId,
+        householdCode: 'JOS-VOM-002',
+        wardId,
+        headEnrollmentId: created.id,
+        baseEnrollmentId: created.enrollmentId,
+        residentialAddress: 'Settlement Road, Vom',
+        memberCount: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      enrollment: created,
+    });
+
+    const result = await useCase.execute(actor, baseInput);
+
+    expect(result.enrollmentId).toBe('PL-CBHI-JOS-VOM-002');
+    expect(result.householdCodeRemapped).toBe(true);
+    expect(households.createHeadEnrollment).toHaveBeenCalledWith(
+      expect.objectContaining({
+        household: expect.objectContaining({ householdCode: 'JOS-VOM-002' }),
+      }),
+    );
   });
 
   it('rejects member enrollment when the household head is not synced', async () => {

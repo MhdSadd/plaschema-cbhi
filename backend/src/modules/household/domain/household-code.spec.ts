@@ -1,4 +1,5 @@
 import {
+  formatHouseholdCode,
   formatHouseholdCodeSuffix,
   parseHouseholdCodeSuffix,
 } from './household-code';
@@ -13,6 +14,12 @@ describe('household-code', () => {
     it('returns null for invalid codes', () => {
       expect(parseHouseholdCodeSuffix('BAR-TAF')).toBeNull();
       expect(parseHouseholdCodeSuffix('BAR-TAF-ABC')).toBeNull();
+    });
+  });
+
+  describe('formatHouseholdCode', () => {
+    it('combines ward code and padded suffix', () => {
+      expect(formatHouseholdCode('JOS-VOM', 1)).toBe('JOS-VOM-001');
     });
   });
 

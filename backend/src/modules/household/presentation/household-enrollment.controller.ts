@@ -30,6 +30,7 @@ function toHouseholdEnrollmentResponse(
     householdRole: enrollment.householdRole,
     memberSequence: enrollment.memberSequence,
     householdCode: enrollment.household?.householdCode ?? null,
+    householdCodeRemapped: enrollment.householdCodeRemapped ?? false,
   };
 }
 

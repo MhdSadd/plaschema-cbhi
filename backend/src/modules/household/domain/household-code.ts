@@ -17,3 +17,7 @@ export function parseHouseholdCodeSuffix(householdCode: string): number | null {
 export function formatHouseholdCodeSuffix(sequence: number): string {
   return String(sequence).padStart(3, '0');
 }
+
+export function formatHouseholdCode(wardCode: string, sequence: number): string {
+  return `${wardCode}-${formatHouseholdCodeSuffix(sequence)}`;
+}

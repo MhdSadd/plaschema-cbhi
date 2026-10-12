@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
+import { CacheModule } from '../../platform/cache/cache.module';
 import { ActivityLogModule } from '../activity-log/activity-log.module';
 import { EnrollmentModule } from '../enrollment/enrollment.module';
 import { HealthFacilityModule } from '../health-facility/health-facility.module';
 import { IdentityModule } from '../identity/identity.module';
 import { WardModule } from '../ward/ward.module';
+import { HouseholdCodeAllocationService } from './application/household-code-allocation.service';
 import { CreateHouseholdEnrollmentUseCase } from './application/create-household-enrollment.use-case';
 import { GetHouseholdCodeCountersUseCase } from './application/get-household-code-counters.use-case';
 import { GetHouseholdUseCase } from './application/get-household.use-case';
@@ -15,6 +17,7 @@ import { HouseholdEnrollmentController } from './presentation/household-enrollme
 
 @Module({
   imports: [
+    CacheModule,
     ActivityLogModule,
     EnrollmentModule,
     HealthFacilityModule,
@@ -27,6 +30,7 @@ import { HouseholdEnrollmentController } from './presentation/household-enrollme
       provide: HOUSEHOLD_REPOSITORY,
       useClass: PrismaHouseholdRepository,
     },
+    HouseholdCodeAllocationService,
     CreateHouseholdEnrollmentUseCase,
     ListHouseholdsUseCase,
     GetHouseholdCodeCountersUseCase,

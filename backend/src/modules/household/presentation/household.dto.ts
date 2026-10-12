@@ -104,6 +104,12 @@ export class CreateHouseholdEnrollmentResponseDto {
 
   @ApiPropertyOptional({ example: 'JOS-VOM-001', nullable: true })
   householdCode!: string | null;
+
+  @ApiPropertyOptional({
+    description:
+      'True when the server replaced the client household code with the next available suffix for the ward',
+  })
+  householdCodeRemapped?: boolean;
 }
 
 export class ListHouseholdsQueryDto {
