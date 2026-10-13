@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '../../../platform/http/app-error';
+import { lgaLabelsMatch } from '../../../shared/lga-label';
 import {
   ACTIVITY_LOG_REPOSITORY,
   type ActivityLogRepository,
@@ -28,7 +29,7 @@ export class GetDashboardUseCase {
       if (!wardLga) {
         throw new AppError('WARD_NOT_FOUND', 'Ward not found', 404);
       }
-      if (query.lga && query.lga !== wardLga) {
+      if (query.lga && !lgaLabelsMatch(query.lga, wardLga)) {
         throw new AppError(
           'WARD_LGA_MISMATCH',
           'wardId does not belong to the specified lga',

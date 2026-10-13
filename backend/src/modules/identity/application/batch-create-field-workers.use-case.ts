@@ -8,6 +8,7 @@ import {
   type BatchUploadResult,
 } from '../../../platform/http/csv';
 import { createUuidV7 } from '../../../platform/ids/uuid-v7';
+import { normalizeLgaForStorage } from '../../../shared/lga-label';
 import { normalizePlaceName, toTitleCase } from '../../../shared/text';
 import {
   WARD_REPOSITORY,
@@ -80,7 +81,7 @@ export class BatchCreateFieldWorkersUseCase {
       const name = toTitleCase((row.name ?? '').trim());
       const email = (row.email ?? '').trim().toLowerCase();
       const phone = (row.phone ?? '').replace(/\D/g, '').slice(0, 11);
-      const lga = normalizePlaceName((row.lga ?? '').trim());
+      const lga = normalizeLgaForStorage((row.lga ?? '').trim());
       const wardNames = splitWardNames(row.wards ?? '');
       const status = parseStatus(row.status);
 

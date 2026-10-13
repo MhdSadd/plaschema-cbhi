@@ -20,6 +20,7 @@ import {
   Min,
   MinLength,
 } from 'class-validator';
+import { ApiOpaqueListCursor } from '../../../platform/http/opaque-list-cursor.decorator';
 import {
   EmptyStringToUndefined,
   toQueryBool,
@@ -209,14 +210,7 @@ export class UpdateEnrollmentProfileDto extends PartialType(
 ) {}
 
 export class ListEnrollmentsQueryDto {
-  @ApiPropertyOptional({
-    type: String,
-    format: 'uuid',
-    description: 'Cursor from the previous page nextCursor',
-  })
-  @EmptyStringToUndefined()
-  @IsOptional()
-  @IsUUID('7')
+  @ApiOpaqueListCursor()
   cursor?: string;
 
   @ApiPropertyOptional({

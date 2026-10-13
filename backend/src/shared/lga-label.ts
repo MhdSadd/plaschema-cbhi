@@ -13,6 +13,11 @@ export function normalizeLgaLabel(value: string): string {
     .replace(/\s+/g, ' ');
 }
 
+/** Lowercase canonical form stored on ward, facility, and enrollment LGA fields. */
+export function normalizeLgaForStorage(value: string): string {
+  return normalizeLgaLabel(value);
+}
+
 export function lgaLabelsMatch(a: string, b: string): boolean {
   return normalizeLgaLabel(a) === normalizeLgaLabel(b);
 }

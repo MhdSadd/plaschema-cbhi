@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '../../../platform/http/app-error';
 import { createUuidV7 } from '../../../platform/ids/uuid-v7';
+import { normalizeLgaForStorage } from '../../../shared/lga-label';
 import { normalizePlaceName } from '../../../shared/text';
 import {
   WARD_REPOSITORY,
@@ -53,7 +54,7 @@ export class CreateHealthFacilityUseCase {
       );
     }
 
-    const lga = normalizePlaceName(input.lga ?? ward.lga);
+    const lga = normalizeLgaForStorage(input.lga ?? ward.lga);
     const type = (input.type?.trim() || DEFAULT_HEALTH_FACILITY_TYPE).trim();
 
     return this.facilities.create({

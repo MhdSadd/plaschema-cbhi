@@ -14,6 +14,7 @@ import {
   MinLength,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
+import { ApiOpaqueListCursor } from '../../../platform/http/opaque-list-cursor.decorator';
 import {
   EmptyStringToUndefined,
   toQueryInt,
@@ -69,14 +70,7 @@ export class UpdateWardDto {
 }
 
 export class ListWardsQueryDto {
-  @ApiPropertyOptional({
-    type: String,
-    format: 'uuid',
-    description: 'Cursor from the previous page nextCursor',
-  })
-  @EmptyStringToUndefined()
-  @IsOptional()
-  @IsUUID('7')
+  @ApiOpaqueListCursor()
   cursor?: string;
 
   @ApiPropertyOptional({

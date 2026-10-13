@@ -1,6 +1,7 @@
 import {
   expandLgaFilterVariants,
   lgaLabelsMatch,
+  normalizeLgaForStorage,
   normalizeLgaLabel,
 } from './lga-label';
 
@@ -9,6 +10,10 @@ describe('lga-label', () => {
     expect(lgaLabelsMatch("Qua'an Pan", "Qua'An-Pan")).toBe(true);
     expect(lgaLabelsMatch("Qua'An Pan", "Qua'An-Pan")).toBe(true);
     expect(normalizeLgaLabel("Qua'An-Pan")).toBe("qua'an pan");
+  });
+
+  it('stores LGAs in lowercase canonical form', () => {
+    expect(normalizeLgaForStorage("  Qua'An Pan  ")).toBe("qua'an pan");
   });
 
   it('expands filter variants for hyphen and space spellings', () => {

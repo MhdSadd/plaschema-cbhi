@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { toQueryInt } from '../../../platform/http/query-transforms';
 import { createUuidV7 } from '../../../platform/ids/uuid-v7';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
+import { lgaLabelsMatch } from '../../../shared/lga-label';
 import { formatCapitationPeriod, currentMonthYearInLagos } from '../../ward/domain/ward-date';
 import type {
   CapitationGenerateResult,
@@ -242,10 +243,7 @@ export class PrismaCapitationRepository implements CapitationRepository {
       ) {
         return false;
       }
-      if (
-        query.lga &&
-        row.lga.toLowerCase() !== query.lga.toLowerCase()
-      ) {
+      if (query.lga && !lgaLabelsMatch(row.lga, query.lga)) {
         return false;
       }
       if (query.search) {
