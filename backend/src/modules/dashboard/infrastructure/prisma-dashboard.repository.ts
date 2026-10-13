@@ -589,7 +589,9 @@ export class PrismaDashboardRepository implements DashboardRepository {
     return {
       ...(status ? { status } : {}),
       ...(query.wardId ? { wardId: query.wardId } : {}),
-      ...(query.lga && !query.wardId ? wardLgaFilterWhere(query.lga) : {}),
+      ...(query.lga && !query.wardId
+        ? { ward: wardLgaFilterWhere(query.lga) }
+        : {}),
     };
   }
 
