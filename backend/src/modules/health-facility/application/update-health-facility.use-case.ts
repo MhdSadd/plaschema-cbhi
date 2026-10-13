@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '../../../platform/http/app-error';
+import { normalizeLgaForStorage } from '../../../shared/lga-label';
 import { normalizePlaceName } from '../../../shared/text';
 import {
   WARD_REPOSITORY,
@@ -51,7 +52,7 @@ export class UpdateHealthFacilityUseCase {
         : existing.name;
 
     let nextLga =
-      input.lga !== undefined ? normalizePlaceName(input.lga) : undefined;
+      input.lga !== undefined ? normalizeLgaForStorage(input.lga) : undefined;
 
     if (input.wardId) {
       const ward = await this.wards.findById(input.wardId);

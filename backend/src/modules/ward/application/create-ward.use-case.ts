@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '../../../platform/http/app-error';
 import { createUuidV7 } from '../../../platform/ids/uuid-v7';
+import { normalizeLgaForStorage } from '../../../shared/lga-label';
 import { normalizePlaceName } from '../../../shared/text';
 import type { WardStatus } from '../domain/ward';
 import {
@@ -22,7 +23,7 @@ export class CreateWardUseCase {
     status?: WardStatus;
   }) {
     const name = normalizePlaceName(input.name);
-    const lga = normalizePlaceName(input.lga);
+    const lga = normalizeLgaForStorage(input.lga);
 
     try {
       deriveWardCodeBase(lga, name);

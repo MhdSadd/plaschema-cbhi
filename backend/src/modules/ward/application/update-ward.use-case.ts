@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AppError } from '../../../platform/http/app-error';
+import { normalizeLgaForStorage } from '../../../shared/lga-label';
 import { normalizePlaceName } from '../../../shared/text';
 import type { WardStatus } from '../domain/ward';
 import { deriveWardCodeBase, resolveUniqueWardCode } from '../domain/ward-code';
@@ -25,7 +26,7 @@ export class UpdateWardUseCase {
     const name =
       input.name !== undefined ? normalizePlaceName(input.name) : undefined;
     const lga =
-      input.lga !== undefined ? normalizePlaceName(input.lga) : undefined;
+      input.lga !== undefined ? normalizeLgaForStorage(input.lga) : undefined;
 
     if (name && name !== existing.name) {
       const clash = await this.wards.findByName(name);

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
+import { wardLgaFilterWhere } from '../../../shared/lga-label';
 import type { ActivityLogEntry } from '../domain/activity-log';
 import type {
   ActivityLogEntryWithWard,
@@ -149,7 +150,7 @@ export class PrismaActivityLogRepository implements ActivityLogRepository {
     const rows = await this.prisma.activityLog.findMany({
       where: {
         ...(filters.wardId ? { wardId: filters.wardId } : {}),
-        ...(filters.lga ? { ward: { lga: filters.lga } } : {}),
+        ...(filters.lga ? { ward: wardLgaFilterWhere(filters.lga) } : {}),
         ...(filters.occurredFrom || filters.occurredTo
           ? {
               occurredAt: {

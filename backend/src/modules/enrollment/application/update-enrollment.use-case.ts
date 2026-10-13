@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { AuthenticatedUser } from '../../../platform/auth/current-user.decorator';
 import { AppError } from '../../../platform/http/app-error';
 import { normalizeBeneficiaryCategory } from '../../../shared/beneficiary-categories';
+import { normalizeLgaForStorage } from '../../../shared/lga-label';
 import { normalizePlaceName, toTitleCase } from '../../../shared/text';
 import {
   HEALTH_FACILITY_REPOSITORY,
@@ -285,7 +286,7 @@ export class UpdateEnrollmentUseCase {
     }
 
     if (input.lgaOfResidence !== undefined) {
-      const lgaOfResidence = normalizePlaceName(input.lgaOfResidence);
+      const lgaOfResidence = normalizeLgaForStorage(input.lgaOfResidence);
       if (lgaOfResidence !== existing.lgaOfResidence) {
         patch.lgaOfResidence = lgaOfResidence;
         changedFields.push(PROFILE_FIELD_LABELS.lgaOfResidence);

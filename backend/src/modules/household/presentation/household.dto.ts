@@ -13,6 +13,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
+import { ApiOpaqueListCursor } from '../../../platform/http/opaque-list-cursor.decorator';
 import {
   EmptyStringToUndefined,
   toQueryInt,
@@ -113,9 +114,7 @@ export class CreateHouseholdEnrollmentResponseDto {
 }
 
 export class ListHouseholdsQueryDto {
-  @EmptyStringToUndefined()
-  @IsOptional()
-  @IsUUID('7')
+  @ApiOpaqueListCursor()
   cursor?: string;
 
   @TransformQueryLimit()

@@ -5,6 +5,7 @@ import {
   healthFacilityLgaNameAscCursorWhere,
 } from '../../../platform/http/list-cursor';
 import { toQueryInt } from '../../../platform/http/query-transforms';
+import { wardLgaFilterWhere } from '../../../shared/lga-label';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
 import type {
   HealthFacility,
@@ -108,13 +109,7 @@ export class PrismaHealthFacilityRepository
         : {}),
       ...(query.status ? { status: query.status } : {}),
       ...(query.level ? { level: query.level } : {}),
-      ...(query.lga
-        ? {
-            ward: {
-              lga: { equals: query.lga, mode: 'insensitive' as const },
-            },
-          }
-        : {}),
+      ...(query.lga ? { ward: wardLgaFilterWhere(query.lga) } : {}),
       ...(query.search
         ? {
             OR: [

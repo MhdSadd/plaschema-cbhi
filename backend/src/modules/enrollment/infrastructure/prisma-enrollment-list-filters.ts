@@ -1,4 +1,5 @@
 import type { Prisma } from '../../../generated/prisma/client';
+import { wardLgaFilterWhere } from '../../../shared/lga-label';
 import type { ListEnrollmentsQuery } from '../application/enrollment.repository';
 import { dateOfBirthRangeForAge } from '../domain/enrollment-age';
 
@@ -36,9 +37,7 @@ export function buildEnrollmentListWhere(
     ...(query.householdId ? { householdId: query.householdId } : {}),
     ...(query.status ? { status: query.status } : {}),
     ...(query.category ? { category: query.category } : {}),
-    ...(query.lga
-      ? { ward: { lga: { equals: query.lga, mode: 'insensitive' as const } } }
-      : {}),
+    ...(query.lga ? { ward: wardLgaFilterWhere(query.lga) } : {}),
     ...(query.enrollmentId
       ? {
           enrollmentId: {

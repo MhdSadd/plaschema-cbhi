@@ -6,6 +6,7 @@ import {
   type BatchUploadResult,
 } from '../../../platform/http/csv';
 import { createUuidV7 } from '../../../platform/ids/uuid-v7';
+import { normalizeLgaForStorage } from '../../../shared/lga-label';
 import { normalizePlaceName } from '../../../shared/text';
 import {
   allocateUniqueWardCode,
@@ -52,7 +53,7 @@ export class BatchCreateWardsUseCase {
       const rowNumber = index + 2;
       const row = normalizeCsvRow(raw);
       const name = normalizePlaceName(row.name ?? '');
-      const lga = normalizePlaceName(row.lga ?? '');
+      const lga = normalizeLgaForStorage(row.lga ?? '');
       const rawCode = hasCodeColumn ? (row.code ?? '').trim() : '';
 
       if (!name || !lga) {

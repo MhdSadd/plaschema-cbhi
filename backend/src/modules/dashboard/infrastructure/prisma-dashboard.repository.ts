@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '../../../generated/prisma/client';
 import { PrismaService } from '../../../platform/persistence/prisma.service';
+import { wardLgaFilterWhere } from '../../../shared/lga-label';
 import type { DashboardRepository } from '../application/dashboard.repository';
 import {
   normalizeCategoryBreakdown,
@@ -531,7 +532,7 @@ export class PrismaDashboardRepository implements DashboardRepository {
       return { wardId: query.wardId };
     }
     if (query.lga) {
-      return { ward: { lga: query.lga } };
+      return { ward: wardLgaFilterWhere(query.lga) };
     }
     return {};
   }
@@ -543,7 +544,7 @@ export class PrismaDashboardRepository implements DashboardRepository {
       return { wardId: query.wardId };
     }
     if (query.lga) {
-      return { ward: { lga: query.lga } };
+      return { ward: wardLgaFilterWhere(query.lga) };
     }
     return {};
   }
@@ -555,9 +556,7 @@ export class PrismaDashboardRepository implements DashboardRepository {
     return {
       ...(status ? { status } : {}),
       ...(query.wardId ? { id: query.wardId } : {}),
-      ...(query.lga && !query.wardId
-        ? { lga: { equals: query.lga, mode: 'insensitive' } }
-        : {}),
+      ...(query.lga && !query.wardId ? wardLgaFilterWhere(query.lga) : {}),
     };
   }
 
@@ -590,7 +589,9 @@ export class PrismaDashboardRepository implements DashboardRepository {
     return {
       ...(status ? { status } : {}),
       ...(query.wardId ? { wardId: query.wardId } : {}),
-      ...(query.lga && !query.wardId ? { lga: query.lga } : {}),
+      ...(query.lga && !query.wardId
+        ? { ward: wardLgaFilterWhere(query.lga) }
+        : {}),
     };
   }
 
@@ -622,7 +623,7 @@ export class PrismaDashboardRepository implements DashboardRepository {
                   some: {
                     ...(query.wardId ? { wardId: query.wardId } : {}),
                     ...(query.lga && !query.wardId
-                      ? { ward: { lga: query.lga } }
+                      ? { ward: wardLgaFilterWhere(query.lga) }
                       : {}),
                   },
                 },

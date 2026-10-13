@@ -7,6 +7,7 @@ import {
   type ObjectStorage,
 } from '../../../platform/storage/object-storage';
 import { normalizeBeneficiaryCategory } from '../../../shared/beneficiary-categories';
+import { normalizeLgaForStorage } from '../../../shared/lga-label';
 import { normalizePlaceName, toTitleCase } from '../../../shared/text';
 import { RecordActivityUseCase } from '../../activity-log/application/record-activity.use-case';
 import {
@@ -447,7 +448,7 @@ export class CreateHouseholdEnrollmentUseCase {
         stateOfResidence: normalizePlaceName(
           input.stateOfResidence ?? 'Plateau',
         ),
-        lgaOfResidence: normalizePlaceName(input.lgaOfResidence),
+        lgaOfResidence: normalizeLgaForStorage(input.lgaOfResidence),
         residentialAddress,
       },
     };

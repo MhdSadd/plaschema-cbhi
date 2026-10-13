@@ -25,6 +25,7 @@ import type {
   HouseholdDetail,
   HouseholdListItem,
 } from '../domain/household';
+import { wardLgaFilterWhere } from '../../../shared/lga-label';
 import { parseHouseholdCodeSuffix } from '../domain/household-code';
 
 const enrollmentInclude = {
@@ -314,9 +315,7 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
     const filterWhere = {
       ...(query.wardId ? { wardId: query.wardId } : {}),
       ...(query.wardIds?.length ? { wardId: { in: query.wardIds } } : {}),
-      ...(query.lga
-        ? { ward: { lga: { equals: query.lga, mode: 'insensitive' as const } } }
-        : {}),
+      ...(query.lga ? { ward: wardLgaFilterWhere(query.lga) } : {}),
       ...(query.householdCode
         ? {
             householdCode: {
@@ -385,8 +384,7 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
       }),
     ]);
 
-    const pageRows = rows.length > limit ? rows.slice(0, limit) : rows;
-    const items: HouseholdListItem[] = pageRows.map((row) => ({
+    const items: HouseholdListItem[] = rows.map((row) => ({
       id: row.id,
       householdLocalId: row.householdLocalId,
       householdCode: row.householdCode,
@@ -401,7 +399,7 @@ export class PrismaHouseholdRepository implements HouseholdRepository {
     }));
 
     const page = buildCursorPage(items, limit, total);
-    const lastRow = pageRows.at(-1);
+    const lastRow = (rows.length > limit ? rows.slice(0, limit) : rows).at(-1);
     return {
       ...page,
       nextCursor:
