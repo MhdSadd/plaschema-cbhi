@@ -8,12 +8,12 @@ import type {
   LoginPayload,
   LoginResponseApi,
 } from '../types'
-import { getTokenExpiresAt, mapFieldWorkerUser } from '../utils'
+import { mapFieldWorkerUser, resolveAccessTokenExpiry } from '../utils'
 
 export async function loginFieldWorker(payload: LoginPayload): Promise<FieldWorkerLoginResult> {
   const response = await _post<ApiResponse<LoginResponseApi>, LoginPayload>('/auth/login', payload)
   const result = response.data.data
-  const expiresAt = getTokenExpiresAt(result.accessToken)
+  const expiresAt = resolveAccessTokenExpiry(result.accessToken, result.expiresIn)
   if (!expiresAt || expiresAt <= Date.now()) throw new Error('The server returned an invalid session. Please try again.')
   return { accessToken: result.accessToken, expiresAt, user: mapFieldWorkerUser(result.user) }
 }

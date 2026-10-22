@@ -38,7 +38,7 @@ export function useAuthSession() {
   }, [accessToken, completeRestore, query.data])
 
   useEffect(() => {
-    if (query.isError && query.error instanceof FieldWorkerAccessError) clearSession('expired')
+    if (query.isError && query.error instanceof FieldWorkerAccessError) clearSession('logout')
   }, [clearSession, query.error, query.isError])
 
   return { ...query, isOnline }
