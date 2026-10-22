@@ -37,7 +37,7 @@ export function LoginView() {
   const requestError = loginMutation.isError
     ? getApiErrorMessage(loginMutation.error, 'Unable to sign in. Check your connection and try again.')
     : ''
-  const error = validationError || requestError || sessionMessage
+  const error = validationError || requestError || (loginMutation.isError ? '' : sessionMessage)
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()

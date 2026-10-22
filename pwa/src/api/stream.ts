@@ -13,7 +13,6 @@ export async function _getNdjson<T>(path: string, params?: Record<string, string
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     signal,
   })
-  if (response.status === 401) useAuthStore.getState().clearSession('expired')
   if (!response.ok) throw new Error(`Reference download failed (${response.status}).`)
 
   const items: T[] = []
